@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+ height: 100;
+ margin: 0;
+}
+
+.background-div {
+  background-image: url('./assets/background_page.webp');
+  background-size: cover; /* Ensures the image covers the container */
+  background-repeat: no-repeat; /* Prevents repeating the image */
+  background-position: center; /* Centers the image */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}

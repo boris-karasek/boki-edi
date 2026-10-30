@@ -3,9 +3,11 @@ import { Outlet } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import usePageMeta from "../hooks/usePageMeta.js";
+import useScrollOnNavigate from "../hooks/useScrollOnNavigate.js";
 
 export default function RootLayout() {
   usePageMeta();
+  useScrollOnNavigate();
 
   return (
     <div className="background-div">

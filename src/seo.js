@@ -2,6 +2,8 @@
 // into each page's <head> and lists the pages in sitemap.xml) and in the browser (usePageMeta).
 // Keep titles under ~60 characters and descriptions under ~160 so Google shows them in full.
 
+import { company } from "./data/company.js";
+
 export const SITE_URL = "https://www.boki-edi.com";
 export const SITE_NAME = "Boki-Edi";
 
@@ -19,7 +21,8 @@ export const pages = {
   "/contact": {
     title: "Kontakt – Boki-Edi, Dobanovci",
     description:
-      "Pošaljite upit radionici Boki-Edi: Janka Čmelika 13, Dobanovci, 11272 Beograd. Telefon +381 60 3331408.",
+      `Pošaljite upit radionici Boki-Edi: ${company.streetAddress}, ${company.locality}, ` +
+      `${company.postalCode} ${company.city}. Telefon ${company.phoneDisplay}.`,
   },
 };
 

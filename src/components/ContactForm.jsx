@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import emailjs from "emailjs-com";
+import emailjs from "@emailjs/browser";
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -22,10 +22,10 @@ export default function ContactForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+    const PUBLIC_KEY = import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
     emailjs
-      .send("service_jj89tlg", "template_263y4a8", formData, PUBLIC_KEY)
+      .send("service_jj89tlg", "template_263y4a8", formData, { publicKey: PUBLIC_KEY })
       .then((response) => {
         console.log("SUCCESS!", response.status, response.text);
         setStatus("Poruka uspešno poslata!");

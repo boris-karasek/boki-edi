@@ -5,6 +5,92 @@ Newest session first.
 
 ---
 
+## Session 2 — 2026-10-30 (branch `reorganisation`)
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| One scrolling page | `/` has the sections `#pocetna`, `#prednosti`, `#proizvodi`, `#kontakt`; former pages are components in `src/sections/` | `03db121` |
+| Navigation | Fixed header with anchor links (Početna / Proizvodi / Kontakt); the menu entry of the section on screen is highlighted; smooth scrolling (off for "reduce motion"); `scroll-margin-top` keeps titles below the header; the mobile menu closes after a tap | `03db121` |
+| Old URLs | `vercel.json`: `/products` → `/#proizvodi`, `/contact` → `/#kontakt` (308) | `03db121` |
+| SEO | Only `/` and `404.html` are pre-rendered; `sitemap.xml` lists `/` only; canonical `https://www.boki-edi.com/`; one h1, h2 per section, h3 per group, h4 per product | `03db121`, `9de2a47` |
+| Headline and title | h1 "Metalni delovi po meri", the supporting line, two buttons; new `<title>`; meta/Open Graph description lists the main products; `og-image.jpg` regenerated | `9de2a47` |
+| Compact product grid | 2 / 3 / 4 columns; 4:3 image box; description clamped to 2 lines; small "Pošaljite upit"; group chips; benefits in one row (2×2 on mobile) | `512cb69` |
+| "Zoomed-in" photos | Cause: portrait photos in a wide 208 px box with `object-fit: cover`, plus `scale-105` on hover. Now 4:3 card images show the whole part with `object-fit: contain` | `512cb69`, `8c1118e` |
+| Performance | Product images lazy-loaded; the Google Map is inserted only when the contact section is ~400 px from the screen | `8c1118e`, `7a04dea` |
+| Contact layout | Contact details, form and map side by side on desktop, stacked on mobile | `7a04dea` |
+
+**Measured at 1366×768:** when `#proizvodi` starts, the first row of 4 products (Fascikle i registratori) is fully visible. The whole products section is 1687 px, about 2.2 screens.
+
+**Verified locally:** these checks ran in headless Chrome against the built site, served with the same redirects as `vercel.json`. Nothing was deployed.
+- clean build
+- `/`, `/#proizvodi`, `/#kontakt`, and `/products` / `/contact` (308 to the sections)
+- the 404 page, the menu on desktop and mobile, the group chips
+- product inquiry → contact form with the subject prefilled, also on a 390×844 phone
+- form send and failure: EmailJS requests were intercepted, so no emails were sent
+- lightbox, and that the map stays unloaded until the contact section is near
+- no console errors
+
+### How it works now (replaces the Session 1 notes)
+
+- **Build:** `npm run build` runs the client build, then the server build, then `scripts/prerender.mjs`. That writes `dist/index.html`, `dist/404.html` and `dist/sitemap.xml`.
+- **Local check:**
+  - `npm run preview` serves `dist/` like Vercel, using the redirects and clean URLs from `vercel.json` (via `scripts/preview.mjs`)
+  - `npm run dev` for development
+- **Sections:** the page is assembled in `src/pages/Home.jsx` from `src/sections/` (Hero, Benefits, Products, Contact).
+  - Menu entries are in `src/components/NavBar.jsx`.
+  - Section ids are used by the menu, the buttons and the redirects; keep them unchanged.
+- **Title and descriptions:** `src/seo.js`.
+- **Products:** `src/data/products.js` (group order = order on the page). A photo is referenced by its file name.
+  - **New or replaced photo:** put the `.webp` in `src/assets/`, then run `npm run thumbnails`. This creates the 4:3 card image in `src/assets/thumbs/`.
+  - Check the result; if the part is cut off or too small, add a line for that photo to `FRAMING` in `scripts/make-thumbnails.mjs`.
+  - Commit both the photo and its card image.
+- **Contact details:** `src/data/company.js`.
+- **Link preview image:** after changing the headline, run `bash scripts/make-og-image.sh`. It needs ImageMagick and the Noto Sans fonts.
+
+### Decisions
+
+- **Card images (thumbnails) instead of CSS only.** Photo backgrounds range from `#A6A6A6` to `#D4D4D4` and darken toward the corners, so `object-fit: contain` on one gray left visible edges and made small parts tiny.
+  - The script rotates long parts 90°: brzovez, lajsna, šetajuća mehanika, iglica, gumica.
+  - Other parts get a 4:3 crop around them.
+  - Photos are only ever scaled down. The card images are 3–15 KB; the originals are used in the photo viewer.
+- **No source photo is cropped too tightly;** every part is fully inside its frame.
+- **Group order:** Fascikle i registratori first, so the first row has 4 products. "Ramovi" was renamed to "Ramovi i A table" (closes a Session 1 question).
+- **Shorter product descriptions** so they fit two lines on the cards; the full text is in the HTML and in the photo viewer. Changed:
+  - Lajsna
+  - Montiranje
+  - Standardna iglica
+  - Zakačka
+  - Otvarač sa stikerom
+- **The benefits section has a hidden h2 "Prednosti".** It's in the HTML for Google and screen readers but takes no space on screen; the benefit titles are h3. To show it, remove `sr-only` in `src/sections/Benefits.jsx`.
+- **Product inquiries keep the URL form** `/?proizvod=<name>#kontakt`, so such links can be shared. The canonical URL stays `/`, so Google treats them as the home page.
+- **The map is inserted by JavaScript when near the screen,** because `loading="lazy"` alone loaded it immediately on desktop. Until then, and without JavaScript, a "Otvori lokaciju u Google mapama" link is shown (Google Maps search by name and address).
+- **Schema:** LocalBusiness keeps the same data and gains a `contactPoint` pointing to `/#kontakt`. No Product markup: Google expects prices for it.
+- **Tooling:**
+  - `serve` was replaced by `serve-handler` (used by `scripts/preview.mjs`)
+  - `sharp` was added as a dev dependency (only used by `npm run thumbnails`)
+  - neither is used on Vercel
+
+### Open questions / next steps
+
+- [ ] **Deploy and check on Vercel:**
+  - `curl -I https://www.boki-edi.com/products` should return `308` with `location: /#proizvodi` (the same for `/contact`)
+  - the redirects were only verified locally
+- [ ] **Search Console:** after deploying, resubmit `sitemap.xml`. It now has one URL; the old `/products` and `/contact` will drop out over time because of the 308s.
+- [ ] **Products section height:** about 2.2 screens at 1366×768 (target "about 2"). To get closer, the 4:3 boxes could become slightly wider (16:10). Your call.
+- [ ] **Standardna iglica photo:** it has a soft shadow along one edge that can't be cropped away without cutting the part. A re-shoot on a plain background would fix it.
+- [ ] **Still open from Session 1:**
+  - Opružni lim description
+  - who supplies the sticker on "Otvarač sa stikerom"
+  - Metalni završeci for planners
+  - Vercel 307→308 for the bare domain
+  - Vercel build settings
+  - info@ forwarding
+  - Vite upgrade
+
+---
+
 ## Session 1 — 2026-10-30 (branch `reorganisation`)
 
 ### Done
@@ -45,7 +131,7 @@ Also done:
   - Node ≥ 20 required
 - **Navigation:** the page scrolls to the top after client-side navigation.
 
-### How it works now (for future edits)
+### How it works now (for future edits) — superseded by Session 2
 
 - **Build:** `npm run build` = client build → server build → `scripts/prerender.mjs`, which writes `dist/index.html`, `products.html`, `contact.html`, `404.html` and `sitemap.xml`.
 - **Local check:** `npm run preview` serves `dist/` like Vercel does (clean URLs, real 404). `npm run dev` for development.
@@ -59,7 +145,7 @@ Also done:
 ### Decisions
 
 - **Pre-rendering within the existing Vite + React setup** instead of rewriting as static HTML pages. The code and styling stay; adding a product means one entry in a data file. The trade-off is a two-step build plus a ~100-line script.
-- **URLs stay `/products` and `/contact`**, so links already sent to customers keep working. Serbian slugs could be added later with redirects.
+- **URLs stay `/products` and `/contact`**, so links already sent to customers keep working. Serbian slugs could be added later with redirects. *(Superseded in Session 2: one page; these URLs now redirect with 308 to `/#proizvodi` and `/#kontakt`.)*
 - **Unknown URLs return a real 404** (`404.html`) instead of the home page, so Google doesn't index error pages.
 - **Dropped `react-helmet`** (unmaintained). Head tags are written at build time; the title also updates during in-app navigation (`usePageMeta`).
 - **Dropped the `keywords` meta tag**; Google ignores it.
@@ -72,7 +158,7 @@ Also done:
 ### Open questions / next steps
 
 - [ ] **Opružni lim:** confirm what it is used for (A-boards?) and add a sentence in `src/data/products.js`.
-- [ ] Rename the "Ramovi" group to "Ramovi i A table"?
+- [x] Rename the "Ramovi" group to "Ramovi i A table"? — done in Session 2
 - [ ] **Otvarač sa stikerom:** who supplies or prints the sticker? The description is neutral for now.
 - [ ] **Metalni završeci sa gumicom:** also for planners (rokovnici)? The description now says folders only.
 - [ ] **Vercel → Domains:** change the `boki-edi.com` → `www.boki-edi.com` redirect from 307 (temporary) to 308 (permanent).

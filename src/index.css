@@ -11,11 +11,16 @@ html, body {
   margin: 0;
 }
 
+/* Page background: a calm, light "brushed steel" gradient that keeps dark text readable.
+   To use a photo instead (webp, under 200 KB), put it in src/assets/ and replace the
+   background-image line with:
+     background-image: url('./assets/your-background.webp');
+     background-size: cover;
+     background-position: center;
+   Pick a light, quiet image; text sits directly on it on some pages. */
 .background-div {
-  background-image: url('./assets/background_page.webp');
-  background-size: cover; /* Ensures the image covers the container */
-  background-repeat: no-repeat; /* Prevents repeating the image */
-  background-position: center; /* Centers the image */
+  background-color: #e2e8f0;
+  background-image: linear-gradient(160deg, #f8fafc 0%, #e2e8f0 45%, #cbd5e1 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;

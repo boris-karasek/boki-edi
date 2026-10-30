@@ -10,33 +10,15 @@ import otvarac from "../assets/Otvarac 1.webp";
 import otvaracSaStikerom from "../assets/Otvarac 2.webp";
 import opruzniLim from "../assets/Opruzni lim.webp";
 
-// Shown once on the Products page.
+// Shown once at the top of the #proizvodi section.
 export const productNote = "Dimenzije, količine i pakovanje dogovaramo prema potrebama kupca.";
 
-// Products shown on the Products page, grouped by use.
-// Each product: name, description (one sentence, optional), image + alt (optional — services have no photo).
+// Products shown in the #proizvodi section, grouped by use (group order = order on the page).
+// Each product: name, description (short — cards show 2 lines), image + alt (optional — services have no photo).
 // The name is also used as the subject of the "Pošaljite upit" contact form.
 // Do not add dimensions, quantities, packaging, lead times or prices: these are agreed with each customer.
 // Product photos: webp, portrait 3:4 (all current photos are 1435×1920).
 export const productGroups = [
-  {
-    id: "kalendari",
-    title: "Kalendari",
-    products: [
-      {
-        name: "Lajsna za kalendare do 1\u00a0m dužine",
-        description:
-          "Metalna lajsna koja se postavlja na vrh zidnog kalendara, povezuje listove i služi za kačenje.",
-        image: lajsna,
-        alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
-      },
-      {
-        name: "Montiranje lajsni na kalendare",
-        description: "Pored izrade lajsni, nudimo i uslugu njihovog montiranja na kalendare.",
-        isService: true,
-      },
-    ],
-  },
   {
     id: "fascikle-i-registratori",
     title: "Fascikle i registratori",
@@ -55,8 +37,7 @@ export const productGroups = [
       },
       {
         name: "Standardna iglica",
-        description:
-          "Iglica za mehanizme fascikli – isporučuje se zasebno ili zajedno sa brzovezom ili šetajućom mehanikom.",
+        description: "Prodaje se zasebno ili uz brzovez i šetajuću mehaniku.",
         image: standardnaIglica,
         alt: "Standardna iglica – tanka metalna traka za mehanizme fascikli",
       },
@@ -69,12 +50,29 @@ export const productGroups = [
     ],
   },
   {
-    id: "ramovi",
-    title: "Ramovi",
+    id: "kalendari",
+    title: "Kalendari",
+    products: [
+      {
+        name: "Lajsna za kalendare do 1\u00a0m dužine",
+        description: "Povezuje listove zidnog kalendara i služi za njegovo kačenje.",
+        image: lajsna,
+        alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
+      },
+      {
+        name: "Montiranje lajsni na kalendare",
+        description: "Lajsne montiramo na vaše kalendare.",
+        isService: true,
+      },
+    ],
+  },
+  {
+    id: "ramovi-i-a-table",
+    title: "Ramovi i A table",
     products: [
       {
         name: "Zakačka za klik-klak ramove",
-        description: "Metalna zakačka koja se postavlja na poleđinu klik-klak rama i služi za kačenje na zid.",
+        description: "Postavlja se na poleđinu klik-klak rama, za kačenje na zid.",
         image: zakacka,
         alt: "Metalna zakačka za kačenje klik-klak rama",
       },
@@ -104,8 +102,7 @@ export const productGroups = [
       },
       {
         name: "Otvarač sa stikerom",
-        description:
-          "Otvarač za flaše sa okruglim poljem za stiker, npr. sa logotipom. Na fotografiji je prikazan bez stikera.",
+        description: "Sa okruglim poljem za stiker, npr. sa logotipom (na slici bez stikera).",
         image: otvaracSaStikerom,
         alt: "Metalni otvarač za flaše sa okruglim poljem za stiker, prikazan bez stikera",
       },

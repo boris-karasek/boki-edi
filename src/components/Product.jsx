@@ -40,17 +40,17 @@ export default function Product({ product }) {
   }, [isFullscreen]);
 
   return (
-    <article className="group flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ease-in-out duration-300">
-      {/* Product Image (click to enlarge) */}
+    <article className="flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+      {/* Product Image (click to enlarge). Fixed 4:3 box; object-contain shows the whole part. */}
       {image ? (
         <button
           type="button"
-          className="relative w-full h-52 overflow-hidden cursor-zoom-in"
+          className="relative block w-full aspect-[4/3] overflow-hidden bg-[#c4c4c4] cursor-zoom-in"
           onClick={openFullscreen}
           aria-label={`Uvećaj fotografiju: ${name}`}
         >
           <img
-            className="w-full h-full object-cover transform group-hover:scale-105 transition-all duration-300"
+            className="absolute inset-0 w-full h-full p-2 object-contain"
             src={image}
             alt={alt}
             width={PHOTO_WIDTH}
@@ -60,21 +60,24 @@ export default function Product({ product }) {
           />
         </button>
       ) : (
-        <div className="w-full h-52 flex items-center justify-center bg-gradient-to-br from-teal-800 to-stone-900">
-          <MdBuild className="text-6xl text-teal-300" aria-hidden="true" />
+        <div className="w-full aspect-[4/3] flex items-center justify-center bg-gradient-to-br from-teal-800 to-stone-900">
+          <MdBuild className="text-5xl text-teal-300" aria-hidden="true" />
           {isService && <span className="sr-only">Usluga</span>}
         </div>
       )}
 
       {/* Product Name, description and inquiry button */}
-      <div className="flex flex-col flex-grow p-4 text-white">
-        <h4 className="text-lg font-semibold leading-snug">{name}</h4>
-        {description && <p className="mt-2 text-sm text-stone-300 leading-relaxed">{description}</p>}
-        <div className="mt-auto pt-4">
+      <div className="flex flex-col flex-grow px-3 pt-2 pb-3 text-white">
+        <h4 className="text-sm font-semibold leading-snug">{name}</h4>
+        {/* Clamped to 2 lines; the full text is in the HTML and in the photo viewer */}
+        {description && (
+          <p className="mt-0.5 text-xs sm:text-sm text-stone-300 leading-snug line-clamp-2">{description}</p>
+        )}
+        <div className="mt-auto pt-2">
           <Link
             to={`/?proizvod=${encodeURIComponent(name)}#kontakt`}
             aria-label={`Pošaljite upit za: ${name}`}
-            className="inline-block px-4 py-2 text-sm font-medium rounded-md bg-cyan-700 text-white hover:bg-stone-300 hover:text-black transition-colors"
+            className="inline-block px-3 py-1 text-xs font-medium rounded-md bg-cyan-700 text-white hover:bg-stone-300 hover:text-black transition-colors"
           >
             Pošaljite upit
           </Link>
@@ -98,9 +101,10 @@ export default function Product({ product }) {
                 src={image}
                 alt={alt}
               />
-              <p className="absolute bottom-10 text-center text-white text-xl sm:text-2xl font-semibold bg-black bg-opacity-50 p-2 rounded-lg">
-                {name}
-              </p>
+              <div className="absolute bottom-10 max-w-[90%] text-center bg-black bg-opacity-60 px-4 py-2 rounded-lg">
+                <p className="text-white text-xl sm:text-2xl font-semibold">{name}</p>
+                {description && <p className="mt-1 text-stone-200 text-sm sm:text-base">{description}</p>}
+              </div>
             </div>
             <button
               type="button"

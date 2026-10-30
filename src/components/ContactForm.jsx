@@ -24,7 +24,7 @@ export default function ContactForm() {
   const [searchParams] = useSearchParams();
   const product = searchParams.get("proizvod");
 
-  // "Pošaljite upit" on the Products page links here with ?proizvod=<name>; prefill the subject.
+  // "Pošaljite upit" on a product links to /?proizvod=<name>#kontakt; prefill the subject.
   // Done in an effect (after hydration) because the pre-rendered page has no query string.
   useEffect(() => {
     if (product) {
@@ -67,11 +67,8 @@ export default function ContactForm() {
   };
 
   return (
-    <div
-      id="upit"
-      className="w-full max-w-lg p-6 bg-white shadow-lg rounded-xl border border-gray-200 scroll-mt-28"
-    >
-      <h2 className="text-2xl font-bold text-gray-700 text-center mb-4">Pošaljite upit</h2>
+    <div className="w-full max-w-lg p-6 bg-white shadow-lg rounded-xl border border-gray-200">
+      <h3 className="text-2xl font-bold text-gray-700 text-center mb-4">Pošaljite upit</h3>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label htmlFor="contact-name" className="sr-only">
           Ime i prezime

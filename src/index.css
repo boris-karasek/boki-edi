@@ -11,6 +11,13 @@ html, body {
   margin: 0;
 }
 
+/* Smooth scrolling for the in-page menu links, unless the visitor prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* Page background: a calm, light "brushed steel" gradient that keeps dark text readable.
    To use a photo instead (webp, under 200 KB), put it in src/assets/ and replace the
    background-image line with:

@@ -2,8 +2,8 @@
 // (Viber, WhatsApp, e-mail) see real content, a title and a description without running JavaScript.
 //
 // Runs as part of `npm run build`, after the client build (dist/) and the server build (dist-ssr/).
-// Output: dist/index.html, dist/products.html, dist/contact.html, dist/404.html and dist/sitemap.xml.
-// Vercel serves /products from products.html thanks to "cleanUrls" in vercel.json.
+// Output: one HTML file per entry in src/seo.js (currently only dist/index.html — the site is a single
+// page), dist/404.html and dist/sitemap.xml. With "cleanUrls" in vercel.json, /x is served from x.html.
 
 import fs from "node:fs/promises";
 import path from "node:path";

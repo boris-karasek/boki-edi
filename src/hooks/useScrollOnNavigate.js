@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
-// Client-side navigation keeps the previous scroll position by default. Scroll to the top of the new
-// page, or to the element named in the URL hash (e.g. /contact?proizvod=...#upit scrolls to the form).
+// Scrolls after every in-app navigation: to the element named in the URL hash
+// (e.g. "/#proizvodi", "/?proizvod=Brzovez#kontakt"), or to the top of the page.
+// Smooth scrolling comes from `scroll-behavior: smooth` in index.css.
 export default function useScrollOnNavigate() {
-  const { pathname, search, hash } = useLocation();
+  const { key, hash } = useLocation();
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -13,6 +14,9 @@ export default function useScrollOnNavigate() {
       isFirstRender.current = false;
       return;
     }
+    // History entries not created by the router (the photo lightbox adds one) have the key
+    // "default"; going back/forward to them must not move the page.
+    if (key === "default") return;
 
     const target = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
     if (target) {
@@ -20,5 +24,6 @@ export default function useScrollOnNavigate() {
     } else {
       window.scrollTo(0, 0);
     }
-  }, [pathname, search, hash]);
+    // Every navigation gets a new key, so clicking the same menu link twice scrolls again.
+  }, [key]);
 }

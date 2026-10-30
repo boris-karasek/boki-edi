@@ -15,7 +15,7 @@ export default function RootLayout() {
       <NavBar />
 
       {/* Rendering page */}
-      <main className="flex-grow flex items-center justify-center w-full pt-20 mt-5">
+      <main className="flex-grow flex flex-col items-center w-full pt-20">
         <Outlet />
       </main>
 

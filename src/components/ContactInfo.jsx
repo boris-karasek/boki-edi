@@ -5,7 +5,7 @@ import { company } from "../data/company.js";
 export default function ContactInfo() {
   return (
     <div className="flex flex-col bg-white gap-4 p-6 rounded-xl shadow-lg border border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-700">Podaci za kontakt</h2>
+      <h3 className="text-2xl font-bold text-gray-700">Podaci za kontakt</h3>
       <address className="not-italic flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <div className="text-cyan-500 text-3xl" aria-hidden="true">

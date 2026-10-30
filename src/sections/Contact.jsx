@@ -3,10 +3,10 @@ import ContactForm from "../components/ContactForm.jsx";
 
 export default function Contact() {
   return (
-    <div className="w-full mx-auto py-8 animate-fade">
-      <h1 className="text-center font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-stone-900 to-teal-900 text-5xl sm:text-7xl leading-tight mb-8">
+    <section id="kontakt" className="scroll-mt-20 w-full mx-auto py-8">
+      <h2 className="text-center font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-stone-900 to-teal-900 text-5xl sm:text-7xl leading-tight mb-8">
         Kontakt
-      </h1>
+      </h2>
 
       <div className="relative flex flex-col lg:flex-row mx-auto w-full px-6 lg:px-16 py-8 rounded-xl shadow-lg gap-4 bg-gradient-to-r from-teal-700 via-teal-500 to-transparent">
         {/* Google Map Section */}
@@ -31,6 +31,6 @@ export default function Contact() {
           <ContactForm />
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,30 +1,53 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
+import useActiveSection from "../hooks/useActiveSection.js";
+
+// Menu entries point to sections of the one-page site (see src/pages/Home.jsx).
+// `sections` lists the section ids that highlight the entry while they are on screen.
 const navLinks = [
-  { to: "/", label: "Naslovna" },
-  { to: "/products", label: "Proizvodi" },
-  { to: "/contact", label: "Kontakt" },
+  { to: "/", label: "Početna", sections: ["pocetna", "prednosti"] },
+  { to: "/#proizvodi", label: "Proizvodi", sections: ["proizvodi"] },
+  { to: "/#kontakt", label: "Kontakt", sections: ["kontakt"] },
 ];
+const observedSections = navLinks.flatMap((link) => link.sections);
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const activeSection = useActiveSection(observedSections);
 
   function closeMenu() {
     setIsMenuOpen(false);
   }
 
   // Link classes for Desktop screen
-  const linkClassesDesktop = ({ isActive }) =>
+  const linkClassesDesktop = (isActive) =>
     `px-4 py-2 text-xs md:text-base rounded-md hover:bg-stone-300 hover:text-black ${
       isActive ? "bg-stone-300 text-black" : "bg-cyan-700 text-white"
     }`;
 
   // Link classes for Mobile screen
-  const linkClassesMobile = ({ isActive }) =>
+  const linkClassesMobile = (isActive) =>
     `py-2 w-full text-center text-white hover:bg-cyan-700 hover:text-stone-900 rounded-md transition duration-300 ease-in-out ${
       isActive ? "bg-cyan-700" : "bg-transparent"
     }`;
+
+  function renderLinks(classes, onClick) {
+    return navLinks.map(({ to, label, sections }) => {
+      const isActive = sections.includes(activeSection);
+      return (
+        <Link
+          key={to}
+          to={to}
+          className={classes(isActive)}
+          aria-current={isActive ? "true" : undefined}
+          onClick={onClick}
+        >
+          {label}
+        </Link>
+      );
+    });
+  }
 
   return (
     <nav
@@ -54,13 +77,7 @@ export default function NavBar() {
         </button>
 
         {/* Navigation Links Desktop (shown/hidden with CSS so links are always in the HTML) */}
-        <div className="hidden lg:flex lg:flex-row lg:space-x-4">
-          {navLinks.map(({ to, label }) => (
-            <NavLink key={to} to={to} end className={linkClassesDesktop}>
-              {label}
-            </NavLink>
-          ))}
-        </div>
+        <div className="hidden lg:flex lg:flex-row lg:space-x-4">{renderLinks(linkClassesDesktop)}</div>
       </div>
 
       {/* Navigation Links Mobile */}
@@ -70,11 +87,7 @@ export default function NavBar() {
           isMenuOpen ? "max-h-60 visible" : "max-h-0 invisible"
         } flex flex-col mt-2 space-y-2`}
       >
-        {navLinks.map(({ to, label }) => (
-          <NavLink key={to} to={to} end className={linkClassesMobile} onClick={closeMenu}>
-            {label}
-          </NavLink>
-        ))}
+        {renderLinks(linkClassesMobile, closeMenu)}
       </div>
     </nav>
   );

@@ -68,11 +68,11 @@ export default function Product({ product }) {
 
       {/* Product Name, description and inquiry button */}
       <div className="flex flex-col flex-grow p-4 text-white">
-        <h3 className="text-lg font-semibold leading-snug">{name}</h3>
+        <h4 className="text-lg font-semibold leading-snug">{name}</h4>
         {description && <p className="mt-2 text-sm text-stone-300 leading-relaxed">{description}</p>}
         <div className="mt-auto pt-4">
           <Link
-            to={`/contact?proizvod=${encodeURIComponent(name)}#upit`}
+            to={`/?proizvod=${encodeURIComponent(name)}#kontakt`}
             aria-label={`Pošaljite upit za: ${name}`}
             className="inline-block px-4 py-2 text-sm font-medium rounded-md bg-cyan-700 text-white hover:bg-stone-300 hover:text-black transition-colors"
           >

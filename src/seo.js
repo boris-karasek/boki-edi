@@ -21,17 +21,6 @@ export const pages = {
     description:
       "Radionica Boki-Edi iz Dobanovaca od 2007. izrađuje lajsne za kalendare, mehanike za fascikle i delove za ramove — po meri, u malim i velikim serijama.",
   },
-  "/products": {
-    title: "Proizvodi – lajsne, brzovez, delovi za ramove | Boki-Edi",
-    description:
-      "Lajsne za kalendare i montiranje lajsni, brzovez, šetajuća mehanika, iglice, završeci sa gumicom, zakačke i uglovi za ramove. Pošaljite upit.",
-  },
-  "/contact": {
-    title: "Kontakt – Boki-Edi, Dobanovci",
-    description:
-      `Pošaljite upit radionici Boki-Edi: ${company.streetAddress}, ${company.locality}, ` +
-      `${company.postalCode} ${company.city}. Telefon ${company.phoneDisplay}.`,
-  },
 };
 
 export const notFoundPage = {

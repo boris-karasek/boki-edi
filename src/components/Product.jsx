@@ -3,12 +3,15 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { MdBuild } from "react-icons/md";
 
-// Intrinsic size of the product photos (portrait 3:4); lets the browser reserve space before they load.
+// Intrinsic size of the card images (see scripts/make-thumbnails.mjs) and of the original photos;
+// lets the browser reserve space before they load.
+const THUMB_WIDTH = 640;
+const THUMB_HEIGHT = 480;
 const PHOTO_WIDTH = 1435;
 const PHOTO_HEIGHT = 1920;
 
 export default function Product({ product }) {
-  const { name, description, image, alt, isService } = product;
+  const { name, description, image, thumbnail, alt, isService } = product;
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   function openFullscreen() {
@@ -41,7 +44,8 @@ export default function Product({ product }) {
 
   return (
     <article className="flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-      {/* Product Image (click to enlarge). Fixed 4:3 box; object-contain shows the whole part. */}
+      {/* Product Image (click to enlarge). Fixed 4:3 box; the 4:3 card image fills it, object-contain
+          shows the whole part. The viewer below opens the original photo. */}
       {image ? (
         <button
           type="button"
@@ -50,11 +54,11 @@ export default function Product({ product }) {
           aria-label={`Uvećaj fotografiju: ${name}`}
         >
           <img
-            className="absolute inset-0 w-full h-full p-2 object-contain"
-            src={image}
+            className={`absolute inset-0 w-full h-full object-contain ${thumbnail ? "" : "p-2"}`}
+            src={thumbnail ?? image}
             alt={alt}
-            width={PHOTO_WIDTH}
-            height={PHOTO_HEIGHT}
+            width={thumbnail ? THUMB_WIDTH : PHOTO_WIDTH}
+            height={thumbnail ? THUMB_HEIGHT : PHOTO_HEIGHT}
             loading="lazy"
             decoding="async"
           />

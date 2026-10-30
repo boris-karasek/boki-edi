@@ -1,23 +1,23 @@
-import lajsna from "../assets/Lajsna za kalendare do 1m duzine.webp";
-import brzovez from "../assets/Brzovez.webp";
-import setajucaMehanika from "../assets/Setajuca mehanika.webp";
-import standardnaIglica from "../assets/Standardna iglica.webp";
-import metalniZavrseci from "../assets/Metalni zavrseci sa gumicom.webp";
-import zakacka from "../assets/Zakacka za klik klak ramove.webp";
-import ugao25 from "../assets/Ugao za 25.webp";
-import ugao32 from "../assets/Ugao za 32.webp";
-import otvarac from "../assets/Otvarac 1.webp";
-import otvaracSaStikerom from "../assets/Otvarac 2.webp";
-import opruzniLim from "../assets/Opruzni lim.webp";
+// Product photos live in src/assets/ (originals, used in the photo viewer); their 4:3 card images
+// are in src/assets/thumbs/ (made with `npm run thumbnails`). Refer to a photo by its file name.
+const originals = import.meta.glob("../assets/*.webp", { eager: true, import: "default" });
+const thumbnails = import.meta.glob("../assets/thumbs/*.webp", { eager: true, import: "default" });
+
+function photo(file) {
+  const image = originals[`../assets/${file}`];
+  if (!image) throw new Error(`Product photo not found: src/assets/${file}`);
+  // Without a card image the grid shows the original photo (scaled to fit).
+  return { image, thumbnail: thumbnails[`../assets/thumbs/${file}`] };
+}
 
 // Shown once at the top of the #proizvodi section.
 export const productNote = "Dimenzije, količine i pakovanje dogovaramo prema potrebama kupca.";
 
 // Products shown in the #proizvodi section, grouped by use (group order = order on the page).
-// Each product: name, description (short — cards show 2 lines), image + alt (optional — services have no photo).
+// Each product: name, description (short — cards show 2 lines), photo file + alt (services have no photo).
 // The name is also used as the subject of the "Pošaljite upit" contact form.
 // Do not add dimensions, quantities, packaging, lead times or prices: these are agreed with each customer.
-// Product photos: webp, portrait 3:4 (all current photos are 1435×1920).
+// New photo: add the .webp to src/assets/, run `npm run thumbnails`, then add the product here.
 export const productGroups = [
   {
     id: "fascikle-i-registratori",
@@ -26,25 +26,25 @@ export const productGroups = [
       {
         name: "Brzovez",
         description: "Metalni mehanizam za fascikle koji drži perforirana dokumenta.",
-        image: brzovez,
+        ...photo("Brzovez.webp"),
         alt: "Brzovez – metalni mehanizam za fascikle",
       },
       {
         name: "Šetajuća mehanika",
         description: "Metalni mehanizam za fascikle, sličan brzovezu.",
-        image: setajucaMehanika,
+        ...photo("Setajuca mehanika.webp"),
         alt: "Šetajuća mehanika – metalni mehanizam za fascikle",
       },
       {
         name: "Standardna iglica",
         description: "Prodaje se zasebno ili uz brzovez i šetajuću mehaniku.",
-        image: standardnaIglica,
+        ...photo("Standardna iglica.webp"),
         alt: "Standardna iglica – tanka metalna traka za mehanizme fascikli",
       },
       {
         name: "Metalni završeci sa gumicom",
         description: "Gumica sa metalnim završecima za zatvaranje fascikli.",
-        image: metalniZavrseci,
+        ...photo("Metalni zavrseci sa gumicom.webp"),
         alt: "Gumica sa metalnim završecima na oba kraja",
       },
     ],
@@ -56,7 +56,7 @@ export const productGroups = [
       {
         name: "Lajsna za kalendare do 1\u00a0m dužine",
         description: "Povezuje listove zidnog kalendara i služi za njegovo kačenje.",
-        image: lajsna,
+        ...photo("Lajsna za kalendare do 1m duzine.webp"),
         alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
       },
       {
@@ -73,19 +73,19 @@ export const productGroups = [
       {
         name: "Zakačka za klik-klak ramove",
         description: "Postavlja se na poleđinu klik-klak rama, za kačenje na zid.",
-        image: zakacka,
+        ...photo("Zakacka za klik klak ramove.webp"),
         alt: "Metalna zakačka za kačenje klik-klak rama",
       },
       {
         name: "Ugao za 25",
         description: "Metalni ugao koji se koristi u izradi A tabli.",
-        image: ugao25,
+        ...photo("Ugao za 25.webp"),
         alt: "Metalni ugao za 25 za A table",
       },
       {
         name: "Ugao za 32",
         description: "Metalni ugao koji se koristi u izradi A tabli.",
-        image: ugao32,
+        ...photo("Ugao za 32.webp"),
         alt: "Metalni ugao za 32 za A table",
       },
     ],
@@ -97,18 +97,18 @@ export const productGroups = [
       {
         name: "Otvarač",
         description: "Metalni otvarač za flaše.",
-        image: otvarac,
+        ...photo("Otvarac 1.webp"),
         alt: "Metalni otvarač za flaše",
       },
       {
         name: "Otvarač sa stikerom",
         description: "Sa okruglim poljem za stiker, npr. sa logotipom (na slici bez stikera).",
-        image: otvaracSaStikerom,
+        ...photo("Otvarac 2.webp"),
         alt: "Metalni otvarač za flaše sa okruglim poljem za stiker, prikazan bez stikera",
       },
       {
         name: "Opružni lim",
-        image: opruzniLim,
+        ...photo("Opruzni lim.webp"),
         alt: "Pravougaona pločica od opružnog lima",
       },
     ],

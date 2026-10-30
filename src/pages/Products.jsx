@@ -1,9 +1,7 @@
-import { useRouteLoaderData } from 'react-router-dom';
 import Product from '../components/Product';
+import { products } from '../data/products.js';
 
 export default function Products() {
-  const { products } = useRouteLoaderData("root");
-  
   return (
     <div className="min-h-screen py-8 px-4 sm:px-8 bg-gradient-to-r from-stone-800 via-cyan-700 to-transparent animate-fade">
       <div className="flex justify-center mb-6">

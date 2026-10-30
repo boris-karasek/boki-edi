@@ -1,12 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-export default function Home({ handleClickContact }) {
-  const navigate = useNavigate();
-
-  function goToContact() {
-    navigate("/contact");
-  }
-
+export default function Home() {
   return (
     <div className="relative flex items-center justify-center w-full px-6 text-white animate-fade overflow-hidden">
       {/* Large Decorative Elements */}
@@ -42,12 +36,12 @@ export default function Home({ handleClickContact }) {
 
         {/* Call-to-Action */}
 
-        <button
-          onClick={goToContact}
-          className="px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-900 text-stone-200 font-semibold text-lg rounded-lg shadow-lg hover:scale-105 transition-transform"
+        <Link
+          to="/contact"
+          className="inline-block px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-900 text-stone-200 font-semibold text-lg rounded-lg shadow-lg hover:scale-105 transition-transform"
         >
           Kontaktirajte nas
-        </button>
+        </Link>
       </div>
     </div>
   );

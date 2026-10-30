@@ -1,5 +1,6 @@
-// Title and description for every page. Used at build time (scripts/prerender.mjs writes them
-// into each page's <head> and lists the pages in sitemap.xml) and in the browser (usePageMeta).
+// Title and description of the site (a single page) and of the 404 page. Used at build time
+// (scripts/prerender.mjs writes them into <head>, incl. Open Graph, and lists the pages in sitemap.xml)
+// and in the browser (usePageMeta).
 // Keep titles under ~60 characters and descriptions under ~160 so Google shows them in full.
 
 import { company } from "./data/company.js";
@@ -12,14 +13,14 @@ export const OG_IMAGE = {
   path: "/og-image.jpg",
   width: 1200,
   height: 630,
-  alt: "Boki-Edi – proizvođač metalnih delova za kalendare, fascikle i klik-ramove, Dobanovci",
+  alt: "Boki-Edi – metalni delovi po meri: lajsne za kalendare, brzovezi, uglovi za A table. Dobanovci, od 2007.",
 };
 
 export const pages = {
   "/": {
-    title: "Boki-Edi – metalni delovi za kalendare, fascikle i ramove",
+    title: "Boki-Edi – radnja za proizvodnju sitne metalne galanterije",
     description:
-      "Radionica Boki-Edi iz Dobanovaca od 2007. izrađuje lajsne za kalendare, mehanike za fascikle i delove za ramove — po meri, u malim i velikim serijama.",
+      "Boki-Edi iz Dobanovaca (Beograd) od 2007. izrađuje metalne delove po meri: lajsne za kalendare, brzoveze, mehanike za fascikle, uglove za A table i drugo.",
   },
 };
 

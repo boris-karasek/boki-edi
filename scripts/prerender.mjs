@@ -47,6 +47,14 @@ function localBusinessJsonLd() {
       addressRegion: company.city,
       addressCountry: company.countryCode,
     },
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "sales",
+      telephone: company.phone,
+      email: company.email,
+      availableLanguage: "sr",
+      url: `${SITE_URL}/#kontakt`,
+    },
   };
   // Escape "<" so the JSON can never close the <script> element early.
   const json = JSON.stringify(data).replace(/</g, "\\u003c");

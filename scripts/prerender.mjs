@@ -13,7 +13,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const distDir = path.join(rootDir, "dist");
 const ssrDir = path.join(rootDir, "dist-ssr");
 
-const { render, pages, notFoundPage, SITE_URL } = await import(
+const { render, pages, notFoundPage, SITE_URL, OG_IMAGE, company } = await import(
   pathToFileURL(path.join(ssrDir, "entry-server.mjs")).href
 );
 
@@ -25,6 +25,32 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+// Structured data (schema.org) so Google can show the business name, address and phone.
+function localBusinessJsonLd() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: company.name,
+    description: pages["/"].description,
+    url: `${SITE_URL}/`,
+    image: SITE_URL + OG_IMAGE.path,
+    telephone: company.phone,
+    email: company.email,
+    foundingDate: String(company.foundingYear),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: company.streetAddress,
+      addressLocality: company.locality,
+      postalCode: company.postalCode,
+      addressRegion: company.city,
+      addressCountry: company.countryCode,
+    },
+  };
+  // Escape "<" so the JSON can never close the <script> element early.
+  const json = JSON.stringify(data).replace(/</g, "\\u003c");
+  return `<script type="application/ld+json">${json}</script>`;
 }
 
 function headTags(page, url) {
@@ -43,8 +69,17 @@ function headTags(page, url) {
       `<meta property="og:locale" content="sr_RS" />`,
       `<meta property="og:url" content="${url}" />`,
       `<meta property="og:title" content="${escapeHtml(page.title)}" />`,
-      `<meta property="og:description" content="${escapeHtml(page.description)}" />`
+      `<meta property="og:description" content="${escapeHtml(page.description)}" />`,
+      `<meta property="og:image" content="${SITE_URL}${OG_IMAGE.path}" />`,
+      `<meta property="og:image:width" content="${OG_IMAGE.width}" />`,
+      `<meta property="og:image:height" content="${OG_IMAGE.height}" />`,
+      `<meta property="og:image:alt" content="${escapeHtml(OG_IMAGE.alt)}" />`,
+      `<meta name="twitter:card" content="summary_large_image" />`
     );
+  }
+
+  if (page === pages["/"]) {
+    tags.push(localBusinessJsonLd());
   }
 
   return tags.join("\n    ");

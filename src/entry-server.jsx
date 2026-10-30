@@ -4,7 +4,8 @@ import { StaticRouter } from "react-router-dom";
 
 import App from "./App.jsx";
 
-export { SITE_URL, pages, notFoundPage } from "./seo.js";
+export { SITE_URL, OG_IMAGE, pages, notFoundPage } from "./seo.js";
+export { company } from "./data/company.js";
 
 export function render(url) {
   return renderToString(

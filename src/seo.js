@@ -7,6 +7,14 @@ import { company } from "./data/company.js";
 export const SITE_URL = "https://www.boki-edi.com";
 export const SITE_NAME = "Boki-Edi";
 
+// Preview image for links shared on Viber, WhatsApp, e-mail, social networks (public/og-image.jpg).
+export const OG_IMAGE = {
+  path: "/og-image.jpg",
+  width: 1200,
+  height: 630,
+  alt: "Boki-Edi – proizvođač metalnih delova za kalendare, fascikle i klik-ramove, Dobanovci",
+};
+
 export const pages = {
   "/": {
     title: "Boki-Edi – metalni delovi za kalendare, fascikle i ramove",

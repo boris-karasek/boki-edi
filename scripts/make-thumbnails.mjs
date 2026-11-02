@@ -31,7 +31,12 @@ const THUMB_HEIGHT = 480;
 // the part is cut off or too small.
 const FRAMING = {
   "Brzovez.webp": { rotate: -90 },
-  "Lajsna za kalendare.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
+  // Close-up of the strip mounted on a calendar: not rotated (the calendar print would be sideways);
+  // the strip runs diagonally and is cut by the frame on purpose.
+  "Lajsna za kalendare.webp": { centerY: 0.5 },
+  "Lajsna za kalendare veca.webp": {}, // wider shot of the mounted strip; not used yet
+  // The strip alone on gray: product photo in the PDF catalogue (scripts/make-catalog.mjs)
+  "Lajsna za kalendare do 1m duzine.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
   "Setajuca mehanika.webp": { rotate: 90, zoom: 1.05, centerY: 0.53 }, // keeps most of an edge shadow out
   "Standardna iglica.webp": { rotate: 90, zoom: 1.05, centerY: 0.55 }, // keeps most of an edge shadow out
   "Metalni zavrseci sa gumicom.webp": { rotate: 90 },

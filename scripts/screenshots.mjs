@@ -1,0 +1,212 @@
+// Takes screenshots of the built site with headless Chrome, for the design brief (docs/design-brief.md).
+// Uses the installed Google Chrome through the DevTools protocol; no extra npm packages.
+//
+// Usage: npm run build, then
+//        npm run screenshots                 first screens and full pages -> docs/screenshots/
+//        npm run screenshots -- --variants   first screens of each ?bg= background variant
+//                                            -> docs/screenshots/variants/ (only while dev/ exists)
+//
+// The script starts its own preview server (scripts/preview.mjs) on port 4179, so `npm run preview`
+// can keep running. Set CHROME=/path/to/chrome if Chrome is not at /usr/bin/google-chrome.
+import { spawn } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const outDir = path.join(rootDir, "docs", "screenshots");
+const chromePath = process.env.CHROME ?? "/usr/bin/google-chrome";
+const port = 4179;
+const baseUrl = `http://localhost:${port}`;
+
+const desktop = (width, height) => ({ width, height, mobile: false });
+const phone = (width, height) => ({ width, height, mobile: true });
+
+const pageShots = [
+  { file: "first-screen-1920x1080.png", viewport: desktop(1920, 1080) },
+  { file: "first-screen-1366x768.png", viewport: desktop(1366, 768) },
+  { file: "first-screen-390x844.png", viewport: phone(390, 844) },
+  { file: "full-page-1366x768.jpg", viewport: desktop(1366, 768), fullPage: true },
+  { file: "full-page-390x844.jpg", viewport: phone(390, 844), fullPage: true },
+];
+
+// Background variants of the temporary switcher in dev/ (?bg=0 is the current background).
+const variants = ["0-current", "1-brushed-steel", "2-steel-blue-noise", "3-blueprint-grid", "4-plain-sections"];
+const variantShots = variants.flatMap((name) => [
+  { file: `variants/bg-${name}-1366x768.png`, viewport: desktop(1366, 768), query: `?bg=${name[0]}` },
+  { file: `variants/bg-${name}-390x844.png`, viewport: phone(390, 844), query: `?bg=${name[0]}` },
+]);
+
+const shots = process.argv.includes("--variants") ? variantShots : pageShots;
+
+// --- Minimal DevTools protocol client ---------------------------------------------------------
+
+function connect(wsUrl) {
+  const ws = new WebSocket(wsUrl);
+  let lastId = 0;
+  const pending = new Map();
+  const listeners = new Set();
+
+  ws.addEventListener("message", ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.id && pending.has(message.id)) {
+      const { resolve, reject } = pending.get(message.id);
+      pending.delete(message.id);
+      if (message.error) reject(new Error(`${message.error.message} (${message.error.code})`));
+      else resolve(message.result);
+    } else if (message.method) {
+      for (const listener of listeners) listener(message);
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    ws.addEventListener("error", () => reject(new Error(`Cannot connect to ${wsUrl}`)));
+    ws.addEventListener("open", () =>
+      resolve({
+        send(method, params = {}, sessionId) {
+          const id = ++lastId;
+          ws.send(JSON.stringify({ id, method, params, sessionId }));
+          return new Promise((res, rej) => pending.set(id, { resolve: res, reject: rej }));
+        },
+        once(method, sessionId) {
+          return new Promise((res) => {
+            const listener = (message) => {
+              if (message.method === method && message.sessionId === sessionId) {
+                listeners.delete(listener);
+                res(message.params);
+              }
+            };
+            listeners.add(listener);
+          });
+        },
+        close: () => ws.close(),
+      })
+    );
+  });
+}
+
+async function launchChrome() {
+  const profileDir = await fs.mkdtemp(path.join(os.tmpdir(), "boki-edi-chrome-"));
+  const chrome = spawn(
+    chromePath,
+    [
+      "--headless=new",
+      "--remote-debugging-port=0",
+      `--user-data-dir=${profileDir}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--hide-scrollbars",
+      "about:blank",
+    ],
+    { stdio: ["ignore", "ignore", "pipe"] }
+  );
+  const wsUrl = await new Promise((resolve, reject) => {
+    let output = "";
+    chrome.stderr.on("data", (chunk) => {
+      output += chunk;
+      const match = output.match(/DevTools listening on (ws:\/\/\S+)/);
+      if (match) resolve(match[1]);
+    });
+    chrome.on("error", reject);
+    chrome.on("exit", (code) => reject(new Error(`Chrome exited (${code}):\n${output}`)));
+  });
+  return {
+    wsUrl,
+    async close() {
+      chrome.kill();
+      await new Promise((resolve) => chrome.once("exit", resolve));
+      // Chrome helper processes may still be writing to the profile for a moment after exit.
+      await fs.rm(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    },
+  };
+}
+
+async function startPreview() {
+  const server = spawn(process.execPath, [path.join(rootDir, "scripts", "preview.mjs")], {
+    env: { ...process.env, PORT: String(port) },
+    stdio: ["ignore", "pipe", "inherit"],
+  });
+  await new Promise((resolve, reject) => {
+    server.stdout.on("data", (chunk) => String(chunk).includes("Preview:") && resolve());
+    server.on("exit", (code) => reject(new Error(`Preview server exited (${code})`)));
+  });
+  return server;
+}
+
+// --- Page preparation (runs in the page) ------------------------------------------------------
+
+// Scrolls through the whole page so lazy images and the map load, waits for them,
+// then returns to the top. The hero fades in during the first second.
+const preparePage = async () => {
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  await document.fonts.ready;
+  const step = Math.round(window.innerHeight * 0.75);
+  for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+    window.scrollTo({ top: y, behavior: "instant" });
+    await wait(150);
+  }
+  const pending = [...document.images].filter((img) => !img.complete);
+  await Promise.all(
+    pending.map(
+      (img) =>
+        new Promise((resolve) => {
+          img.addEventListener("load", resolve);
+          img.addEventListener("error", resolve);
+        })
+    )
+  );
+  await wait(2000); // map iframe
+  window.scrollTo({ top: 0, behavior: "instant" });
+  // The panel of the temporary background switcher (dev/) is not part of the design.
+  document.getElementById("bg-switcher")?.remove();
+  await wait(1200);
+  return document.documentElement.scrollHeight;
+};
+
+async function takeShot(cdp, shot) {
+  const { targetId } = await cdp.send("Target.createTarget", { url: "about:blank" });
+  const { sessionId } = await cdp.send("Target.attachToTarget", { targetId, flatten: true });
+  const send = (method, params) => cdp.send(method, params, sessionId);
+
+  const { width, height, mobile } = shot.viewport;
+  await send("Page.enable");
+  await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile });
+  if (mobile) await send("Emulation.setTouchEmulationEnabled", { enabled: true });
+
+  const loaded = cdp.once("Page.loadEventFired", sessionId);
+  await send("Page.navigate", { url: `${baseUrl}/${shot.query ?? ""}` });
+  await loaded;
+
+  const { result } = await send("Runtime.evaluate", {
+    expression: `(${preparePage})()`,
+    awaitPromise: true,
+    returnByValue: true,
+  });
+  const pageHeight = result.value;
+
+  // Full pages as JPEG: as PNG they are over 1.5 MB.
+  const { data } = await send("Page.captureScreenshot", {
+    ...(shot.file.endsWith(".jpg") ? { format: "jpeg", quality: 90 } : { format: "png" }),
+    ...(shot.fullPage
+      ? { captureBeyondViewport: true, clip: { x: 0, y: 0, width, height: pageHeight, scale: 1 } }
+      : {}),
+  });
+  const file = path.join(outDir, shot.file);
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, Buffer.from(data, "base64"));
+  await cdp.send("Target.closeTarget", { targetId });
+
+  console.log(`${shot.file}  (${width}×${shot.fullPage ? pageHeight : height})`);
+}
+
+const server = await startPreview();
+const chrome = await launchChrome();
+try {
+  const cdp = await connect(chrome.wsUrl);
+  for (const shot of shots) await takeShot(cdp, shot);
+  cdp.close();
+} finally {
+  server.kill();
+  await chrome.close();
+}

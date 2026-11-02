@@ -1,10 +1,8 @@
 // Takes screenshots of the built site with headless Chrome, for the design brief (docs/design-brief.md).
 // Uses the installed Google Chrome through the DevTools protocol; no extra npm packages.
 //
-// Usage: npm run build, then
-//        npm run screenshots                 first screens and full pages -> docs/screenshots/
-//        npm run screenshots -- --variants   first screens of each ?bg= background variant
-//                                            -> docs/screenshots/variants/ (only while dev/ exists)
+// Usage: npm run build, then npm run screenshots
+//        (first screens and full pages -> docs/screenshots/)
 //
 // The script starts its own preview server (scripts/preview.mjs) on port 4179, so `npm run preview`
 // can keep running. Set CHROME=/path/to/chrome if Chrome is not at /usr/bin/google-chrome.
@@ -23,22 +21,13 @@ const baseUrl = `http://localhost:${port}`;
 const desktop = (width, height) => ({ width, height, mobile: false });
 const phone = (width, height) => ({ width, height, mobile: true });
 
-const pageShots = [
+const shots = [
   { file: "first-screen-1920x1080.png", viewport: desktop(1920, 1080) },
   { file: "first-screen-1366x768.png", viewport: desktop(1366, 768) },
   { file: "first-screen-390x844.png", viewport: phone(390, 844) },
   { file: "full-page-1366x768.jpg", viewport: desktop(1366, 768), fullPage: true },
   { file: "full-page-390x844.jpg", viewport: phone(390, 844), fullPage: true },
 ];
-
-// Background variants of the temporary switcher in dev/ (?bg=0 is the current background).
-const variants = ["0-current", "1-brushed-steel", "2-steel-blue-noise", "3-blueprint-grid", "4-plain-sections"];
-const variantShots = variants.flatMap((name) => [
-  { file: `variants/bg-${name}-1366x768.png`, viewport: desktop(1366, 768), query: `?bg=${name[0]}` },
-  { file: `variants/bg-${name}-390x844.png`, viewport: phone(390, 844), query: `?bg=${name[0]}` },
-]);
-
-const shots = process.argv.includes("--variants") ? variantShots : pageShots;
 
 // --- Minimal DevTools protocol client ---------------------------------------------------------
 
@@ -158,8 +147,6 @@ const preparePage = async () => {
   );
   await wait(2000); // map iframe
   window.scrollTo({ top: 0, behavior: "instant" });
-  // The panel of the temporary background switcher (dev/) is not part of the design.
-  document.getElementById("bg-switcher")?.remove();
   await wait(1200);
   return document.documentElement.scrollHeight;
 };
@@ -175,7 +162,7 @@ async function takeShot(cdp, shot) {
   if (mobile) await send("Emulation.setTouchEmulationEnabled", { enabled: true });
 
   const loaded = cdp.once("Page.loadEventFired", sessionId);
-  await send("Page.navigate", { url: `${baseUrl}/${shot.query ?? ""}` });
+  await send("Page.navigate", { url: `${baseUrl}/` });
   await loaded;
 
   const { result } = await send("Runtime.evaluate", {

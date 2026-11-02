@@ -5,6 +5,132 @@ Newest session first.
 
 ---
 
+## Catalogue session — 2026-11-02 (branch `reorganisation`)
+
+Topic: a downloadable PDF product catalogue, generated from the site's data, plus a download link on the site. Nothing was merged or deployed.
+
+### The catalogue
+
+- **File:** `public/katalog.pdf`, A4, 7 pages, 0.37 MB (shown as "0,4 MB"). Edition "novembar 2026".
+- **Link** (works once deployed): https://www.boki-edi.com/katalog.pdf. It opens in the browser and saves as "Boki-Edi katalog.pdf". The address stays the same when the catalogue is regenerated, so links in e-mails keep working.
+- **Page images for review:** `docs/catalog-preview/page-1.png` … `page-7.png`
+
+| Page | Content |
+|---|---|
+| 1 | Cover: BOKI-EDI, "Metalni delovi po meri", the first hero sentence, "Dobanovci, od 2007.", the website, one photo per product group |
+| 2 | O nama: hero text, the 4 benefits, the shared note + "Cene i uslovi na upit.", contents (clickable) |
+| 3 | Fascikle i registratori: 4 products, 2 × 2 |
+| 4 | Kalendari: Lajsna (strip on gray) + the service block "Montiranje lajsni na kalendare" with the photo of a mounted strip |
+| 5 | Ramovi i A table: 3 products |
+| 6 | Ostalo: Otvarač, Otvarač sa stikerom (Opružni lim is left out until it has a description) |
+| 7 | Kako poručiti (your 3 approved steps) and Kontakt: phone, e-mail, address, website, QR code to https://www.boki-edi.com/#kontakt |
+
+Each product has its photo, name, full description and a clickable "Pošaljite upit ›". The link opens the site's form with the product as the subject. Each product page ends with the shared note. Every page has a footer: Boki-Edi · phone · website · "Izdanje: <month year>" · page number.
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| Your Lajsna change | Committed as it was: the new name "Lajsna za kalendare", the two new photos, the service card removed from the products | `b5e754f` |
+| New Lajsna card image | Upright (not rotated), full width. The old photo keeps its framing, because the catalogue uses it. All other card images are byte-identical. | `361ad54` |
+| Shared texts | The hero text and the benefits moved from the components to `src/data/about.js`. The pre-rendered HTML is identical to before. | `d885c04` |
+| Shared helpers | The Chrome launcher (`scripts/lib/chrome.mjs`) and the photo framing (`FRAMING`, now in `scripts/lib/framing.mjs`) are used by the thumbnails, the screenshots and the catalogue. The output is unchanged. | `7aef634` |
+| Catalogue fields | In `products.js`: <ul><li>`fullDescription` (the four longer texts from before Session 2)</li><li>`catalogPhoto` (Lajsna)</li><li>`inCatalog: false` (Opružni lim)</li></ul> | `33c2eae` |
+| Generator | `npm run catalog`: `scripts/make-catalog.mjs`, the styles in `scripts/catalog/catalog.css`, Noto Sans Regular/Bold with their license in `scripts/catalog/fonts/` | `e8fc745`, `eefcabe`, `ce68411`, `1db879b` |
+| The PDF | Generated, with the page images | `d9ef82d` |
+| Download links | <ul><li>Products: an outlined button "Preuzmite katalog (PDF, 0,4 MB)" next to the note below the tabs</li><li>Contact: a "Katalog proizvoda:" row in "Podaci za kontakt"</li><li>`vercel.json`: the file name header for `/katalog.pdf`</li><li>`npm run preview` now applies the `vercel.json` headers too</li></ul> | `2c8e8df` |
+
+**Verified locally** (nothing deployed):
+
+- **Pages:**
+  - all 7 viewed as images
+  - nothing cut off: the script checks every page and stops if anything overflows
+  - č, ć, š, ž, đ display correctly and come out right when text is copied or searched
+- **Fonts:** only the bundled Noto Sans is embedded.
+- **Photos:**
+  - JPEG, 267–364 ppi on the product pages; the lowest is Zakačka, limited by its original
+  - checked at 300 dpi: no visible compression
+- **QR code:** decoded from the page images (72, 100 and 150 dpi) to exactly `https://www.boki-edi.com/#kontakt`.
+- **Links in the PDF:** all inquiry links, phone, e-mail and website, plus the contents links to pages 3–7.
+- **Properties:** title "Boki-Edi – katalog proizvoda", author "Boki-Edi", subject, keywords, language `sr`, tagged PDF (screen readers), bookmarks.
+- **Placeholder rule:** with Opružni lim put back in, `npm run catalog` stopped with "Missing information … Opružni lim: description" and wrote nothing. The draft showed a red "[OPIS – dopuniti]".
+- **In `npm run preview`:**
+  - `/katalog.pdf` → 200, `application/pdf`, `Content-Disposition: inline; filename="Boki-Edi katalog.pdf"`, byte-identical to `public/katalog.pdf`
+  - both links clicked in Chrome at 1366×768 and 390×844: each saved "Boki-Edi katalog.pdf", 380,564 bytes; the page stays where it is; no console errors
+  - `/products` and `/contact` still 308; unknown URLs 404
+- **Build warning:** after changing one character in `products.js`, `npm run build` printed the warning. Without changes it is silent, also in a fresh clone.
+
+### Decisions
+
+- **Separate from `npm run build`.**
+  - Making the PDF needs Chrome, which Vercel's build doesn't have.
+  - The PDF only changes when products change, so it's committed.
+  - `npm run build` warns when products, texts, photos or the catalogue layout have changed since the last `npm run catalog`. The fingerprint is stored in `src/data/catalog.json`.
+- **The site's link reads its label from `src/data/catalog.json`.** `npm run catalog` writes it, so the size shown always matches the committed PDF.
+- **No unfinished catalogue gets out.** The final PDF is refused if:
+  - a placeholder is left
+  - a page overflows
+  - a font other than the bundled Noto Sans gets embedded (a character Noto Sans lacks)
+  - it is over 2 MB
+
+  `npm run catalog -- --draft` builds a marked draft ("NACRT" in the footer) into `catalog-draft/`, which git ignores.
+- **Layout rule:**
+  - 4 products on a page → 2 × 2 cards; fewer → rows (photo left, text right)
+  - more than 4 in a group → the group continues on another page ("nastavak"), split evenly
+  - a page with a service block holds at most 3 items
+- **Photos are framed exactly like the cards** (same `FRAMING`), at up to 1000×750 px as JPEG. Chrome embeds JPEGs as they are, which is why the PDF is only 0.37 MB.
+- **Noto Sans is bundled** in `scripts/catalog/fonts/` (2 × 0.5 MB, unmodified, OFL license next to them). It's loaded under its own name, so a system font can never take its place. The site itself still uses the system font.
+- **Document properties:** Chrome sets the title and language. The script appends author, subject and keywords at the end of the file (a standard PDF "incremental update"), with no extra package.
+- **New dev dependency:** `qrcode-generator` 2.0.4 (MIT, no dependencies of its own). The QR code is a vector, so it stays sharp when zoomed or printed.
+- **Readable file name:** the site links use `download="Boki-Edi katalog.pdf"`. Direct links (e-mails) get the same name from the `Content-Disposition` header. It is `inline`, so the PDF opens in the browser instead of downloading straight away.
+- **Chrome is found** in its usual place on Linux, macOS and Windows, so the catalogue can be regenerated on another computer. Elsewhere, set `CHROME=/path/to/chrome`. The page images and the font check also need poppler (`pdftoppm`, `pdffonts`); without it they are skipped with a note.
+
+### How to regenerate the catalogue
+
+1. Change the product in `src/data/products.js` (and its photo + `npm run thumbnails`, as before). Catalogue-only fields, all optional:
+   - `fullDescription`: a longer text for the catalogue
+   - `catalogPhoto`: a different photo
+   - `inCatalog: false`: leave the product out
+2. Run `npm run catalog`. It prints the pages and products and writes:
+   - `public/katalog.pdf`
+   - `src/data/catalog.json`
+   - `docs/catalog-preview/`
+3. Look at `docs/catalog-preview/page-*.png`, or open the PDF.
+4. Commit the three outputs, then deploy.
+
+Notes:
+
+- The edition month is the date of the run.
+- The catalogue's own texts are in `TEXT` at the top of `scripts/make-catalog.mjs`: the "Kako poručiti" steps, headings, the QR caption.
+- The colors and sizes are in `scripts/catalog/catalog.css`.
+- The intro text and benefits come from `src/data/about.js`, so they also change the site.
+- A benefit with `catalog: { group, photo }` becomes a service block on that group's page.
+
+### Open questions / next steps
+
+- [ ] **Opružni lim:** send me its description. Then remove `inCatalog: false` in `products.js` and run `npm run catalog`. It goes on page 6 with the other "Ostalo" products.
+- [ ] **Longer descriptions** for the other 6 products (optional; for now they have their one sentence).
+- [ ] **Standardna iglica photo:** after the reshoot, replace the file, then run `npm run thumbnails` and `npm run catalog`.
+- [ ] **Lajsna on the site:**
+  - The alt text still describes the strip alone ("…sa otvorom za kačenje"), while the site now shows the mounted strip. Suggestion: "Metalna lajsna montirana na zidni kalendar". The catalogue's strip photo would then need its own alt text (a small change).
+  - The new photo is 3024×4032 / 362 KB. The photo viewer loads it whole; the other originals are 1435×1920 and under 75 KB. Scaling it down to 1435×1920 would cut it to about 100 KB.
+- [ ] **`Lajsna za kalendare veca.webp` is unused** but still deployed: every photo in `src/assets/` is bundled, so 517 KB plus its card image go out with the site, though no page loads them. Delete it (and its card image) if you don't need it.
+- [ ] **Design brief and screenshots** (`docs/`) still show the page before the Lajsna rename and the links. Page height is now 1997 px at 1366 wide (brief: 2008) and 3414 px at 390 (brief: 3282). Retake with `npm run build`, then `npm run screenshots`, when convenient.
+- [ ] **After deploying:**
+  - open https://www.boki-edi.com/katalog.pdf
+  - check it saves as "Boki-Edi katalog.pdf"
+  - scan the QR code on page 7 with a phone
+
+  The header was only checked locally.
+- [ ] **Merge and deploy:** the Session 3 checklist below still applies.
+- [ ] **Still open from earlier sessions:**
+  - who supplies the sticker on "Otvarač sa stikerom"
+  - Metalni završeci for planners
+  - info@ forwarding: when it works, change `email` in `src/data/company.js` and run `npm run catalog`
+  - Vite upgrade
+
+---
+
 ## Session 3 — 2026-11-02 (branch `reorganisation`)
 
 Topic: product groups as tabs, scroll animations, hover zoom on product cards, and removing the switched-off image background. Nothing was merged or deployed.

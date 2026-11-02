@@ -77,3 +77,18 @@ html, body {
     transition: none;
   }
 }
+
+/* Scroll reveal (src/hooks/useRevealOnScroll.js): fade in + 20 px upward move, 500 ms, once.
+   Only opacity and transform change, so nothing else on the page moves. The hidden state exists only
+   after the app has started ("reveal-ready") and never with reduced motion; it has no transition, so
+   hiding happens instantly off screen and only the reveal animates. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-ready [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .reveal-ready [data-reveal][data-revealed] {
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+}

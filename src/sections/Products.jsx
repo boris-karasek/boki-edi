@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import Product from "../components/Product";
+import { revealProps } from "../hooks/useRevealOnScroll.js";
 import { productGroups, productNote } from "../data/products.js";
 
 // Product groups as tabs (WAI-ARIA tabs pattern). All groups are rendered — also in the pre-rendered
@@ -47,7 +48,7 @@ export default function Products() {
 
   return (
     <section id="proizvodi" className="scroll-mt-20 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      <h2 className="text-center font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-stone-900 to-teal-900 text-4xl leading-tight">
+      <h2 {...revealProps()} className="text-center font-bold uppercase text-transparent bg-clip-text bg-gradient-to-r from-stone-900 to-teal-900 text-4xl leading-tight">
         Proizvodi
       </h2>
 
@@ -98,8 +99,8 @@ export default function Products() {
               {group.title}
             </h3>
             <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {group.products.map((product) => (
-                <li key={product.name}>
+              {group.products.map((product, index) => (
+                <li key={product.name} {...revealProps(index)}>
                   <Product product={product} />
                 </li>
               ))}

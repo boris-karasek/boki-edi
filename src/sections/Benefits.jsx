@@ -1,5 +1,7 @@
 import { MdCheckCircle } from "react-icons/md";
 
+import { revealProps } from "../hooks/useRevealOnScroll.js";
+
 const benefits = [
   {
     title: "Izrada po meri",
@@ -28,8 +30,8 @@ export default function Benefits() {
       </h2>
       {/* One row on desktop, 2×2 on smaller screens */}
       <ul className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 rounded-3xl p-4 sm:p-6 shadow-2xl bg-gradient-to-l from-teal-900 via-teal-800 to-stone-900">
-        {benefits.map((benefit) => (
-          <li key={benefit.title} className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-2 sm:gap-3">
+        {benefits.map((benefit, index) => (
+          <li key={benefit.title} {...revealProps(index)} className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-2 sm:gap-3">
             <MdCheckCircle className="shrink-0 sm:mt-0.5 text-2xl text-teal-300" aria-hidden="true" />
             <div>
               <h3 className="text-sm sm:text-base font-semibold text-stone-50 leading-snug">{benefit.title}</h3>

@@ -4,10 +4,12 @@ import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import usePageMeta from "../hooks/usePageMeta.js";
 import useScrollOnNavigate from "../hooks/useScrollOnNavigate.js";
+import useRevealOnScroll from "../hooks/useRevealOnScroll.js";
 
 export default function RootLayout() {
   usePageMeta();
   useScrollOnNavigate();
+  useRevealOnScroll();
 
   return (
     <div className="background-div">

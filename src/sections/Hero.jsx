@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section
       id="pocetna"
-      className="scroll-mt-20 w-full px-6 pt-12 pb-6 md:pt-16 text-center animate-fade"
+      className="scroll-mt-20 w-full px-6 pt-12 pb-6 md:pt-16 text-center"
     >
       <div className="max-w-3xl mx-auto">
         {/* Title with decorative underline (drawn with ::after) */}

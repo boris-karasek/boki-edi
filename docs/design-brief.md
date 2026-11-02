@@ -112,7 +112,8 @@ There is no web font. The site uses the system font stack (Tailwind `font-sans`)
 | Section padding | Hero 64 px top (48 px on mobile) and 24 px bottom; benefits 24 px top and bottom; products and contact 32 px top and bottom; 20 px gap above the footer |
 | Benefits panel | 1104 × 140 px desktop; 358 × 293 px on a phone (2 × 2) |
 | Product card | 254 × 307 px on desktop, 4 per row, 16 px gap, photo 250 × 188 (4:3). On a phone 161 × 249 px, 2 per row, 12 px gap, photo 157 × 118. |
-| Products panel | 1104 × 1490 px desktop; 358 × 1955 px phone |
+| Product tabs | One row of four tabs, 44 px high, centered (scrolls sideways on a phone) |
+| Products panel | Shows one group at a time; always as tall as the tallest group: 1104 × 366 px desktop; 358 × 535 px phone |
 | Contact panel | 1104 × 568 px desktop (three columns); 358 × 1292 px phone (stacked) |
 | Footer | 52 px |
 
@@ -120,11 +121,11 @@ There is no web font. The site uses the system font stack (Tailwind `font-sans`)
 
 | Screen | Page height | Screens to scroll |
 |---|---|---|
-| 1920 × 1080 | 3112 px | 2.9 |
-| 1366 × 768 | 3112 px | 4.1 |
-| 390 × 844 | 4718 px | 5.6 |
+| 1920 × 1080 | 2008 px | 1.9 |
+| 1366 × 768 | 2008 px | 2.6 |
+| 390 × 844 | 3282 px | 3.9 |
 
-Desktop height is the same at 1920 and 1366 because the content width is capped at 1152 px. The height grows whenever products are added.
+Measured after Session 3 (product groups as tabs; before: 3112 px desktop, 4718 px phone). Desktop height is the same at 1920 and 1366 because the content width is capped at 1152 px. The height grows only when the largest product group needs another row of cards.
 
 ### Vertical map (page y, in CSS px)
 
@@ -133,16 +134,16 @@ Desktop height is the same at 1920 and 1366 because the content width is capped 
 | Header | 0–72 | 0–80 |
 | Hero (full width) | 80–468: h1 144–204, paragraph 244–356, buttons 388–444 | 80–672: h1 128–218, paragraph 258–492, buttons 524–648 |
 | Benefits panel | 492–632 | 696–989 |
-| "PROIZVODI" title / note / chips | 688–733 / 741–765 / 777–805 | 1045–1090 / 1098–1146 / 1158–1222 |
-| Products panel | 821–2311 | 1238–3193 |
-| "KONTAKT" title | 2375–2420 | 3257–3302 |
-| Contact panel | 2440–3008 | 3322–4614 |
-| Footer | 3060–3112 | 4666–4718 |
+| "PROIZVODI" title / tab row | 688–733 / 749–793 | 1045–1090 / 1106–1150 |
+| Products panel / note below it | 805–1171 / 1183–1207 | 1162–1697 / 1709–1757 |
+| "KONTAKT" title | 1271–1316 | 1821–1866 |
+| Contact panel | 1336–1904 | 1886–3178 |
+| Footer | 1956–2008 | 3230–3282 |
 
 ### First screen
 
-- **1920 × 1080:** header, hero, benefits, products title and the top of the first row of cards.
-- **1366 × 768:** header, hero, benefits, and the products title and note (cut off at the bottom edge).
+- **1920 × 1080:** header, hero, benefits, products title, the tab row and the top of the first row of cards.
+- **1366 × 768:** header, hero, benefits and the products title; the tab row starts at the bottom edge.
 - **390 × 844:** header, hero, and the top of the benefits panel.
 
 ---
@@ -154,10 +155,10 @@ Desktop height is the same at 1920 and 1366 because the content width is capped 
    - the paragraph
    - the outlined "Pogledajte proizvode" button (text and border)
 2. **Behind the section titles.** **Text sits directly on the background here too:**
-   - "PROIZVODI" and the note below it
+   - "PROIZVODI", and the note below the products panel
    - "KONTAKT"
-   - the group chips, which have their own fill
-3. **Between the sections:** about 24–60 px gaps (468–492, 632–688, 805–821, 2311–2375 and 3008–3060 on desktop).
+   - the product tabs, which have their own fill
+3. **Between the sections:** about 12–64 px gaps (468–492, 632–688, 793–805, 1207–1271 and 1904–1956 on desktop).
 4. **Side strips along the whole page:** 408 px per side at 1920, 131 px at 1366, and only 16 px on a phone.
 5. **Through the transparent right ends of two panels:**
    - The products panel fades to transparent towards the right, so the background shows behind the 4th column of cards and in the empty right part of rows with 2–3 cards.
@@ -220,8 +221,8 @@ The screenshots are in `docs/screenshots/`. They come from the built site in hea
 | `first-screen-1920x1080.png` | First screen, full-HD desktop |
 | `first-screen-1366x768.png` | First screen, common laptop |
 | `first-screen-390x844.png` | First screen, phone (iPhone 12–15 size) |
-| `full-page-1366x768.jpg` | Whole page at 1366 wide (1366 × 3112) |
-| `full-page-390x844.jpg` | Whole page on a phone (390 × 4718) |
+| `full-page-1366x768.jpg` | Whole page at 1366 wide (1366 × 2008) |
+| `full-page-390x844.jpg` | Whole page on a phone (390 × 3282) |
 
 The screenshots show the brushed-steel background. To retake them after a change, run `npm run build`, then `npm run screenshots`.
 

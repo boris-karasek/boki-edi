@@ -11,6 +11,9 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#1c1917" />
+    <!-- Marks that JavaScript runs, before the first paint. Styles that only make sense with JavaScript
+         (product tabs) use the "js" class, so the page stays fully readable without it. -->
+    <script>document.documentElement.classList.add("js");</script>
   </head>
   <body>
     <div id="root"><!--app-html--></div>

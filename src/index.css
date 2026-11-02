@@ -38,3 +38,42 @@ html, body {
   flex-direction: column;
   width: 100%;
 }
+
+/* Product tabs (src/sections/Products.jsx). Only with JavaScript (the "js" class on <html>, set by a
+   script in index.html before the first paint). Without it, the tab row is hidden and all groups are
+   listed one below the other with their titles.
+   With JavaScript, all groups sit in the same grid cell, so the panel area is always as tall as the
+   tallest group at the current width: switching tabs never moves the content below. Inactive groups
+   stay in the HTML but are invisible, cannot be focused and are not read out (visibility: hidden). */
+.product-tabs {
+  display: none;
+}
+.product-panel + .product-panel {
+  margin-top: 1.25rem;
+}
+.js .product-tabs {
+  display: block;
+}
+.js .product-panels {
+  display: grid;
+}
+.js .product-panel {
+  grid-area: 1 / 1;
+  margin-top: 0;
+  transition: opacity 250ms ease-out, visibility 0s;
+}
+.js .product-panel[data-active="false"] {
+  opacity: 0;
+  visibility: hidden;
+  /* fade out first, then hide (crossfade with the incoming group) */
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.js .product-panel-title {
+  @apply sr-only; /* the tab already shows the group name */
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .product-panel,
+  .js .product-panel[data-active="false"] {
+    transition: none;
+  }
+}

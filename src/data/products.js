@@ -13,14 +13,16 @@ function photo(file) {
 // Shown once at the top of the #proizvodi section.
 export const productNote = "Dimenzije, količine i pakovanje dogovaramo prema potrebama kupca.";
 
-// Products shown in the #proizvodi section, grouped by use (group order = order on the page).
+// Products shown in the #proizvodi section, grouped by use. Each group is a tab (group order = tab order;
+// the first group is open by default). The group id is also its link: https://www.boki-edi.com/#<id>
+// opens that tab, so keep ids short, without diacritics, and unchanged once links have been sent.
 // Each product: name, description (short — cards show 2 lines), photo file + alt (services have no photo).
 // The name is also used as the subject of the "Pošaljite upit" contact form.
 // Do not add dimensions, quantities, packaging, lead times or prices: these are agreed with each customer.
 // New photo: add the .webp to src/assets/, run `npm run thumbnails`, then add the product here.
 export const productGroups = [
   {
-    id: "fascikle-i-registratori",
+    id: "fascikle",
     title: "Fascikle i registratori",
     products: [
       {
@@ -67,7 +69,7 @@ export const productGroups = [
     ],
   },
   {
-    id: "ramovi-i-a-table",
+    id: "ramovi",
     title: "Ramovi i A table",
     products: [
       {

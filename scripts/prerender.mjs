@@ -9,6 +9,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { catalogSourceHash } from "./lib/catalog-sources.mjs";
+
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
 const ssrDir = path.join(rootDir, "dist-ssr");
@@ -129,3 +131,13 @@ await fs.writeFile(path.join(distDir, "sitemap.xml"), sitemap);
 console.log("generated  sitemap.xml");
 
 await fs.rm(ssrDir, { recursive: true, force: true });
+
+// The PDF catalogue (public/katalog.pdf) is not part of the build: it needs Chrome and is committed.
+// Warn when the data it is made from has changed since `npm run catalog` last ran.
+const catalog = JSON.parse(await fs.readFile(path.join(rootDir, "src", "data", "catalog.json"), "utf8"));
+if (catalog.sourceHash !== (await catalogSourceHash(rootDir))) {
+  console.warn(
+    "\n! public/katalog.pdf may be out of date: products, texts, photos or the catalogue layout changed\n" +
+      "  since it was made. Run `npm run catalog`, check docs/catalog-preview/, then commit."
+  );
+}

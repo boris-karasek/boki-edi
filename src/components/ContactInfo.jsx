@@ -1,6 +1,7 @@
-import { MdLocationOn, MdEmail, MdPhone } from "react-icons/md";
+import { MdLocationOn, MdEmail, MdPhone, MdPictureAsPdf } from "react-icons/md";
 
 import { company } from "../data/company.js";
+import catalog from "../data/catalog.json";
 
 export default function ContactInfo() {
   return (
@@ -41,6 +42,23 @@ export default function ContactInfo() {
           </div>
         </div>
       </address>
+      {/* PDF catalogue (made with `npm run catalog`) */}
+      <div className="flex items-center gap-4">
+        <div className="text-cyan-500 text-3xl" aria-hidden="true">
+          <MdPictureAsPdf />
+        </div>
+        <div className="flex flex-col">
+          <p className="text-lg font-medium text-gray-800">Katalog proizvoda:</p>
+          <a
+            href={catalog.file}
+            download={catalog.downloadName}
+            type="application/pdf"
+            className="text-gray-600 hover:text-cyan-700 hover:underline"
+          >
+            Preuzmite katalog <span className="whitespace-nowrap">({catalog.sizeLabel})</span>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

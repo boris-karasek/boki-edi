@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { MdFileDownload } from "react-icons/md";
 
 import Product from "../components/Product";
 import { revealProps } from "../hooks/useRevealOnScroll.js";
 import { productGroups, productNote } from "../data/products.js";
+import catalog from "../data/catalog.json";
 
 // Product groups as tabs (WAI-ARIA tabs pattern). All groups are rendered — also in the pre-rendered
 // HTML, for search engines — and stacked in one place; only the active one is visible (see "Product
@@ -109,7 +111,19 @@ export default function Products() {
         ))}
       </div>
 
-      <p className="mt-3 text-center font-medium text-stone-700">{productNote}</p>
+      {/* Shared note and the PDF catalogue (made with `npm run catalog`), side by side when they fit */}
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p className="text-center font-medium text-stone-700">{productNote}</p>
+        <a
+          href={catalog.file}
+          download={catalog.downloadName}
+          type="application/pdf"
+          className="inline-flex items-center gap-1.5 px-3 py-1 border-2 border-cyan-900 text-cyan-900 text-sm font-semibold rounded-lg hover:bg-cyan-900 hover:text-stone-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-900 focus-visible:ring-offset-2"
+        >
+          <MdFileDownload className="text-lg" aria-hidden="true" />
+          Preuzmite katalog ({catalog.sizeLabel})
+        </a>
+      </div>
     </section>
   );
 }

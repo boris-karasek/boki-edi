@@ -1,5 +1,6 @@
 // Serves the built site the way Vercel does, using the settings from vercel.json: clean URLs,
-// no trailing slash, the redirects (e.g. /products -> /#proizvodi) and 404.html for unknown URLs.
+// no trailing slash, the redirects (e.g. /products -> /#proizvodi), the headers (e.g. the file name
+// of /katalog.pdf) and 404.html for unknown URLs.
 // Usage: npm run preview            (serves dist/)
 //        npm run preview -- <folder>
 import http from "node:http";
@@ -23,6 +24,9 @@ const config = {
     destination,
     type: permanent ? 308 : 307,
   })),
+  // Same format as Vercel; locally a source is matched as a glob, so exact paths like
+  // "/katalog.pdf" work and patterns like "/assets/(.*)" are ignored.
+  headers: vercel.headers ?? [],
 };
 
 http

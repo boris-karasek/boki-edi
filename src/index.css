@@ -18,11 +18,21 @@ html, body {
   }
 }
 
-/* Page background: a calm, light "brushed steel" gradient that keeps dark text readable.
-   An image can be added on top of it, see .page-bg-image below and docs/design-brief.md. */
+/* Page background: light "brushed steel". Three layers, top to bottom:
+   - fine horizontal streaks: SVG noise stretched sideways, a 600×300 seamless tile (it also hides
+     gradient banding)
+   - a soft light from the top left
+   - a gray-blue gradient that settles within the first 1400 px, so the top of the page looks the
+     same on every screen and doesn't shift when products are added
+   Text sits directly on it in the hero and the section titles, with contrast of 7:1 or better
+   (docs/design-brief.md, section 10). An image can be added on top of it, see .page-bg-image below. */
 .background-div {
-  background-color: #e2e8f0;
-  background-image: linear-gradient(160deg, #f8fafc 0%, #e2e8f0 45%, #cbd5e1 100%);
+  background-color: #e3e8ed;
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='300'><filter id='b' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.003 .7' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .14  0 0 0 0 .18  0 0 -1.4 0 .72'/></filter><rect width='100%' height='100%' filter='url(%23b)' opacity='.13'/></svg>"),
+    radial-gradient(ellipse 70% 650px at 25% 0, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, #f1f4f7 0, #e8ecf0 700px, #e3e8ed 1400px);
+  background-repeat: repeat, no-repeat, no-repeat;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

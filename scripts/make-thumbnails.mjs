@@ -31,7 +31,7 @@ const THUMB_HEIGHT = 480;
 // the part is cut off or too small.
 const FRAMING = {
   "Brzovez.webp": { rotate: -90 },
-  "Lajsna za kalendare do 1m duzine.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
+  "Lajsna za kalendare.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
   "Setajuca mehanika.webp": { rotate: 90, zoom: 1.05, centerY: 0.53 }, // keeps most of an edge shadow out
   "Standardna iglica.webp": { rotate: 90, zoom: 1.05, centerY: 0.55 }, // keeps most of an edge shadow out
   "Metalni zavrseci sa gumicom.webp": { rotate: 90 },

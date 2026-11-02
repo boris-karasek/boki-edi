@@ -56,16 +56,11 @@ export const productGroups = [
     title: "Kalendari",
     products: [
       {
-        name: "Lajsna za kalendare do 1\u00a0m dužine",
+        name: "Lajsna za kalendare",
         description: "Povezuje listove zidnog kalendara i služi za njegovo kačenje.",
-        ...photo("Lajsna za kalendare do 1m duzine.webp"),
+        ...photo("Lajsna za kalendare.webp"),
         alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
-      },
-      {
-        name: "Montiranje lajsni na kalendare",
-        description: "Lajsne montiramo na vaše kalendare.",
-        isService: true,
-      },
+      }
     ],
   },
   {

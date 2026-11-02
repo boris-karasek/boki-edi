@@ -1,0 +1,509 @@
+/* Styles of the PDF catalogue (scripts/make-catalog.mjs). A4 pages of fixed size; colors from the
+   site's palette (docs/design-brief.md, section 1). The fonts are declared by the script
+   (Noto Sans from scripts/catalog/fonts/). */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font-family: "Catalog Sans", sans-serif;
+  font-size: 12pt;
+  line-height: 1.45;
+  color: #1c1917; /* stone 900 */
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* --- Page frame ------------------------------------------------------------------------------ */
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+}
+
+.page:last-child {
+  break-after: auto;
+}
+
+/* Everything above the footer; the script checks that nothing overflows it */
+.page-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16mm 18mm 8mm;
+  overflow: hidden;
+}
+
+.page-footer {
+  flex: none;
+  height: 13mm;
+  margin: 0 18mm 5mm;
+  border-top: 0.3mm solid #d6d3d1; /* stone 300 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6mm;
+  font-size: 8.5pt;
+  color: #57534e; /* stone 600 */
+}
+
+.page-footer .draft {
+  font-weight: 700;
+  color: #b91c1c; /* red 700 */
+}
+
+/* --- Headings -------------------------------------------------------------------------------- */
+
+.overline {
+  font-size: 9.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0e7490; /* cyan 700 */
+}
+
+.title {
+  margin-top: 1mm;
+  font-size: 26pt;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #1c1917;
+}
+
+/* Short bar under titles, like the underline of the site's headline */
+.bar {
+  width: 32mm;
+  height: 1.8mm;
+  margin-top: 3.5mm;
+  border-radius: 1mm;
+  background: linear-gradient(to right, #2dd4bf, #164e63); /* teal 400 -> cyan 900 */
+}
+
+.page-header {
+  margin-bottom: 7mm;
+}
+
+/* --- Cover ----------------------------------------------------------------------------------- */
+
+.cover-band {
+  flex: none;
+  height: 200mm;
+  padding: 32mm 18mm 0;
+  color: #fafaf9; /* stone 50 */
+  background: linear-gradient(120deg, #1c1917 20%, #115e59 75%, #134e4a 100%); /* stone 900 -> teal */
+}
+
+.cover-brand {
+  font-size: 16pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.cover-title {
+  margin-top: 30mm;
+  font-size: 44pt;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.cover-band .bar {
+  width: 42mm;
+  height: 2.2mm;
+  margin-top: 7mm;
+  background: linear-gradient(to right, #2dd4bf, #0e7490); /* teal 400 -> cyan 700 */
+}
+
+.cover-lead {
+  max-width: 150mm;
+  margin-top: 11mm;
+  font-size: 16pt;
+  line-height: 1.5;
+  color: #e7e5e4; /* stone 200 */
+}
+
+.cover-since {
+  margin-top: 10mm;
+  font-size: 14pt;
+  font-weight: 700;
+  color: #5eead4; /* teal 300 */
+}
+
+.cover-site {
+  margin-top: 1.5mm;
+  font-size: 13pt;
+  color: #d6d3d1; /* stone 300 */
+}
+
+.cover-groups {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-content: center;
+  gap: 5mm;
+  padding: 0 18mm;
+}
+
+.cover-groups a {
+  display: block;
+}
+
+.cover-groups figcaption {
+  margin-top: 2.5mm;
+  font-size: 10pt;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #44403c; /* stone 700 */
+}
+
+/* --- Photos (4:3 gray box, like the product cards on the site) ------------------------------- */
+
+.photo {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 3mm;
+  overflow: hidden;
+  background: #c4c4c4;
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* the images are already 4:3 */
+}
+
+/* Product without a photo (a service): icon on teal, like the site */
+.photo.no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18mm;
+  color: #5eead4;
+  background: linear-gradient(135deg, #115e59, #1c1917);
+}
+
+/* --- Intro page ------------------------------------------------------------------------------ */
+
+.intro-text {
+  font-size: 14pt;
+  line-height: 1.6;
+  color: #44403c;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm 9mm;
+  margin-top: 10mm;
+  padding: 9mm;
+  border-radius: 5mm;
+  background: linear-gradient(to left, #134e4a, #115e59, #1c1917); /* like the site's benefits panel */
+}
+
+.benefits li {
+  display: flex;
+  gap: 3mm;
+}
+
+.benefits svg {
+  flex: none;
+  width: 6.5mm;
+  height: 6.5mm;
+  margin-top: 0.3mm;
+  color: #5eead4; /* teal 300 */
+}
+
+.benefits h3 {
+  font-size: 13.5pt;
+  line-height: 1.3;
+  color: #fafaf9;
+}
+
+.benefits p {
+  margin-top: 1mm;
+  font-size: 12pt;
+  line-height: 1.4;
+  color: #d6d3d1;
+}
+
+.contents {
+  margin-top: 10mm;
+}
+
+.contents h2 {
+  font-size: 18pt;
+  font-weight: 700;
+}
+
+.contents ol {
+  margin-top: 3mm;
+}
+
+.contents a {
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+  padding: 2.1mm 0;
+  border-bottom: 0.3mm solid #e7e5e4; /* stone 200 */
+  font-size: 14pt;
+}
+
+.contents .dots {
+  flex: 1;
+  border-bottom: 0.4mm dotted #a8a29e; /* stone 400 */
+}
+
+.contents .number {
+  font-weight: 700;
+  color: #0e7490;
+}
+
+/* --- Shared note ----------------------------------------------------------------------------- */
+
+.note {
+  padding: 4mm 5mm;
+  border-left: 1.2mm solid #14b8a6; /* teal 500 */
+  border-radius: 0 2mm 2mm 0;
+  background: #f1f4f7; /* the site's light steel gray */
+  font-size: 11pt;
+  line-height: 1.45;
+  color: #44403c;
+}
+
+.note strong {
+  color: #134e4a; /* teal 900 */
+  white-space: nowrap;
+}
+
+.intro-page .note {
+  margin-top: 8mm;
+}
+
+.products-page .note {
+  margin-top: auto;
+}
+
+/* --- Products -------------------------------------------------------------------------------- */
+
+.product h3 {
+  font-size: 16pt;
+  line-height: 1.25;
+}
+
+.product p {
+  margin-top: 2mm;
+  font-size: 12pt;
+  line-height: 1.45;
+  color: #44403c;
+}
+
+.inquiry {
+  display: inline-block;
+  margin-top: 3mm;
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #0e7490; /* cyan 700, like the site's "Pošaljite upit" buttons */
+}
+
+/* 1–3 per page: photo left, text right */
+.rows .product {
+  display: grid;
+  grid-template-columns: 76mm 1fr;
+  gap: 8mm;
+  align-items: center;
+  padding: 5mm 0;
+  border-bottom: 0.3mm solid #e7e5e4;
+}
+
+.rows .product:first-child {
+  padding-top: 0;
+}
+
+.rows .product:last-child,
+.rows .product:has(+ .service) {
+  border-bottom: none;
+}
+
+/* 4 per page: 2 × 2 cards, photo on top */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm 10mm;
+}
+
+.grid .product h3 {
+  margin-top: 4mm;
+}
+
+/* Service block (e.g. mounting strips on calendars): dark teal panel, like the site's benefits */
+.rows .service {
+  margin-top: 3mm;
+  padding: 6mm;
+  border-radius: 4mm;
+  border-bottom: none;
+  grid-template-columns: 70mm 1fr;
+  background: linear-gradient(to left, #134e4a, #115e59, #1c1917);
+}
+
+.service .overline {
+  color: #5eead4;
+}
+
+.service h3 {
+  margin-top: 1mm;
+  color: #fafaf9;
+}
+
+.service p {
+  color: #d6d3d1;
+}
+
+.service .inquiry {
+  color: #5eead4;
+}
+
+/* Missing information: clearly marked; the final catalogue is not built while any is left */
+.placeholder {
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+/* --- How to order / contact ------------------------------------------------------------------ */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+}
+
+.steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 5mm;
+  font-size: 14pt;
+  line-height: 1.5;
+  color: #44403c;
+}
+
+.steps .step-number {
+  flex: none;
+  width: 10mm;
+  height: 10mm;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #14b8a6, #164e63); /* like the site's main button */
+}
+
+.contact-section {
+  margin-top: 16mm;
+}
+
+.contact-section h2 {
+  margin-bottom: 4mm;
+  font-size: 20pt;
+  font-weight: 700;
+}
+
+/* Like the site's contact panel: teal fading to the page color, with a white card on it */
+.contact-panel {
+  padding: 6mm;
+  border-radius: 5mm;
+  background: linear-gradient(to right, #0f766e, #14b8a6 60%, rgba(20, 184, 166, 0));
+}
+
+.contact-card {
+  display: grid;
+  grid-template-columns: 1fr 56mm;
+  gap: 8mm;
+  align-items: center;
+  padding: 9mm 8mm;
+  border: 0.3mm solid #e5e7eb; /* gray 200 */
+  border-radius: 4mm;
+  background: #ffffff;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6mm;
+}
+
+.contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+}
+
+.contact-list svg {
+  flex: none;
+  width: 8mm;
+  height: 8mm;
+  color: #06b6d4; /* cyan 500, like the site's contact icons */
+}
+
+.contact-label {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #374151; /* gray 700 */
+}
+
+.contact-value {
+  font-size: 14pt;
+  color: #1f2937; /* gray 800 */
+}
+
+.qr {
+  text-align: center;
+}
+
+.qr svg {
+  display: block;
+  width: 50mm;
+  height: 50mm;
+  margin: 0 auto;
+}
+
+.qr p {
+  margin-top: 2mm;
+  font-size: 10pt;
+  line-height: 1.35;
+  color: #44403c;
+}
+
+.qr .qr-url {
+  font-weight: 700;
+  color: #0e7490;
+}

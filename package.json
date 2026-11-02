@@ -11,7 +11,8 @@
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "node scripts/preview.mjs",
     "thumbnails": "node scripts/make-thumbnails.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "catalog": "node scripts/make-catalog.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -24,6 +25,7 @@
     "@vitejs/plugin-react": "^4.0.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
+    "qrcode-generator": "^2.0.4",
     "serve-handler": "^6.1.7",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.13",

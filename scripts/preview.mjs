@@ -25,6 +25,33 @@ const config = {
   })),
 };
 
+// Temporary: the background switcher from dev/ (?bg=1…4) is added to the home page here, so the
+// variants can be compared on the built site. Only this local server does it; the files in dist/
+// stay unchanged and Vercel never sees them. Remove with the dev/ folder once a background is chosen.
+const devDir = path.join(rootDir, "dev");
+const devFiles = {
+  "/dev/background-variants.css": "text/css; charset=utf-8",
+  "/dev/background-switcher.js": "text/javascript; charset=utf-8",
+};
+
+async function serveWithBackgroundSwitcher(request, response) {
+  const { pathname } = new URL(request.url, "http://localhost");
+  if (devFiles[pathname]) {
+    response.writeHead(200, { "Content-Type": devFiles[pathname], "Cache-Control": "no-store" });
+    response.end(await fs.readFile(path.join(devDir, path.basename(pathname))));
+    return;
+  }
+  if (pathname === "/") {
+    const html = (await fs.readFile(path.join(publicDir, "index.html"), "utf8"))
+      .replace("</head>", '<link rel="stylesheet" href="/dev/background-variants.css" /></head>')
+      .replace("</body>", '<script type="module" src="/dev/background-switcher.js"></script></body>');
+    response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    response.end(html);
+    return;
+  }
+  return handler(request, response, config);
+}
+
 http
-  .createServer((request, response) => handler(request, response, config))
+  .createServer(serveWithBackgroundSwitcher)
   .listen(port, () => console.log(`Preview: http://localhost:${port} (serving ${publicDir})`));

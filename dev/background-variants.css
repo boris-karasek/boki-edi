@@ -1,0 +1,66 @@
+/* Temporary: page background variants for comparison (?bg=1…4), see dev/background-switcher.js.
+   Not part of the production build. Once a background is chosen, its rules move to src/index.css
+   (replacing the .background-div background there) and the dev/ folder is deleted.
+
+   Each variant only overrides the background of .background-div (the page wrapper in
+   src/pages/RootLayout.jsx); the main color shift happens within the first ~1000 px, so the top
+   of the page looks the same on every screen regardless of the page height (3112 px on desktop,
+   4718 px on a phone). */
+
+/* 1. Refined brushed steel: a narrower, softer gray-blue range than the current gradient,
+      fine horizontal "brushed" streaks (SVG noise stretched sideways; it also hides gradient banding)
+      and a soft light from the top left. */
+html[data-bg="1"] .background-div {
+  background-color: #e3e8ed;
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='300'><filter id='b' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.003 .7' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .14  0 0 0 0 .18  0 0 -1.4 0 .72'/></filter><rect width='100%' height='100%' filter='url(%23b)' opacity='.13'/></svg>"),
+    radial-gradient(ellipse 70% 650px at 25% 0, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, #f1f4f7 0, #e8ecf0 700px, #e3e8ed 1400px);
+  background-repeat: repeat, no-repeat, no-repeat;
+}
+
+/* 2. Soft steel blue at the top fading to light gray, with a very fine, barely visible grain. */
+html[data-bg="2"] .background-div {
+  background-color: #eceff1;
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.09'/></svg>"),
+    radial-gradient(ellipse 900px 360px at 50% 270px, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, #d4e0e9 0, #dfe7ed 520px, #e8ecef 1100px, #eceff1 1600px);
+  background-repeat: repeat, no-repeat, no-repeat;
+}
+
+/* 3. Technical drawing: a light surface with a faint 24 px grid and a stronger line every 120 px,
+      in the dark cyan of the buttons. A light wash behind the headline keeps the hero text calm. */
+html[data-bg="3"] .background-div {
+  background-color: #f1f5f7;
+  background-image:
+    radial-gradient(ellipse 820px 330px at 50% 280px, rgba(241, 245, 247, 0.92) 35%, rgba(241, 245, 247, 0) 100%),
+    linear-gradient(rgba(22, 78, 99, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 78, 99, 0.09) 1px, transparent 1px),
+    linear-gradient(rgba(22, 78, 99, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 78, 99, 0.045) 1px, transparent 1px);
+  background-size: auto, 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: 0 0, 50% -1px, 50% -1px, 50% -1px, 50% -1px;
+  background-repeat: no-repeat, repeat, repeat, repeat, repeat;
+}
+@media (max-width: 767px) {
+  html[data-bg="3"] .background-div {
+    background-image:
+      radial-gradient(ellipse 120% 420px at 50% 360px, rgba(241, 245, 247, 0.92) 35%, rgba(241, 245, 247, 0) 100%),
+      linear-gradient(rgba(22, 78, 99, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 78, 99, 0.09) 1px, transparent 1px),
+      linear-gradient(rgba(22, 78, 99, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 78, 99, 0.045) 1px, transparent 1px);
+  }
+}
+
+/* 4. Plain light surface; the products section sits on a slightly darker full-width band with
+      hairlines at its edges. The band is drawn with border-image (outset to the screen edges),
+      which paints behind the section without changing its layout or clipping its shadows. */
+html[data-bg="4"] .background-div {
+  background-color: #f5f6f7;
+  background-image: none;
+}
+html[data-bg="4"] #proizvodi {
+  border-image: linear-gradient(#dde1e5 0 1px, #eaedf0 1px calc(100% - 1px), #dde1e5 calc(100% - 1px)) fill 0 / / 0 100vmax;
+}

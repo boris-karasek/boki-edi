@@ -43,18 +43,19 @@ export default function Product({ product }) {
   }, [isFullscreen]);
 
   return (
-    <article className="flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+    // "product-card" / "product-card-image": hover zoom and lift, see "Product card hover" in src/index.css
+    <article className="product-card flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg">
       {/* Product Image (click to enlarge). Fixed 4:3 box; the 4:3 card image fills it, object-contain
           shows the whole part. The viewer below opens the original photo. */}
       {image ? (
         <button
           type="button"
-          className="relative block w-full aspect-[4/3] overflow-hidden bg-[#c4c4c4] cursor-zoom-in"
+          className="relative block w-full aspect-[4/3] overflow-hidden bg-[#c4c4c4] cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-cyan-400"
           onClick={openFullscreen}
           aria-label={`Uvećaj fotografiju: ${name}`}
         >
           <img
-            className={`absolute inset-0 w-full h-full object-contain ${thumbnail ? "" : "p-2"}`}
+            className={`product-card-image absolute inset-0 w-full h-full object-contain ${thumbnail ? "" : "p-2"}`}
             src={thumbnail ?? image}
             alt={alt}
             width={thumbnail ? THUMB_WIDTH : PHOTO_WIDTH}

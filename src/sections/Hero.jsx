@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+import { headline, intro } from "../data/about.js";
+
 export default function Hero() {
   return (
     <section
@@ -9,14 +11,11 @@ export default function Hero() {
       <div className="max-w-3xl mx-auto">
         {/* Title with decorative underline (drawn with ::after) */}
         <h1 className="relative text-4xl md:text-6xl font-extrabold tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-900 to-stone-900 after:absolute after:left-1/2 after:-translate-x-1/2 after:-bottom-4 after:w-40 after:h-2 after:rounded-full after:bg-gradient-to-r after:from-teal-400 after:to-cyan-900">
-          Metalni delovi po&nbsp;meri
+          {headline}
         </h1>
 
         <p className="mt-10 text-lg md:text-xl text-stone-700 leading-relaxed">
-          Proizvodimo kvalitetnu sitnu metalnu galanteriju za potrebe
-          štamparske, grafičke i druge industrije. U našem proizvodnom programu
-          nalaze se lajsne za kalendare, šetajuća mehanika, brzovezi, uglovi za
-          A table i drugi metalni proizvodi. Uspešno poslujemo od 2007. godine.
+          {intro.join(" ")}
         </p>
 
         {/* Call-to-Action */}

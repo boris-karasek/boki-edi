@@ -1,25 +1,7 @@
 import { MdCheckCircle } from "react-icons/md";
 
 import { revealProps } from "../hooks/useRevealOnScroll.js";
-
-const benefits = [
-  {
-    title: "Izrada po meri",
-    text: "Delove izrađujemo po porudžbini, prema potrebama vašeg proizvoda.",
-  },
-  {
-    title: "Male i velike serije",
-    text: "Radimo i manje količine i veće serije.",
-  },
-  {
-    title: "Montiranje lajsni na kalendare",
-    text: "Osim izrade lajsni, montiramo ih i na vaše kalendare.",
-  },
-  {
-    title: "Direktan kontakt sa proizvođačem",
-    text: "Sve dogovarate direktno sa radionicom, bez posrednika.",
-  },
-];
+import { benefits } from "../data/about.js";
 
 export default function Benefits() {
   return (

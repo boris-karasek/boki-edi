@@ -18,6 +18,10 @@ export const productNote = "Dimenzije, količine i pakovanje dogovaramo prema po
 // opens that tab, so keep ids short, without diacritics, and unchanged once links have been sent.
 // Each product: name, description (short — cards show 2 lines), photo file + alt (services have no photo).
 // The name is also used as the subject of the "Pošaljite upit" contact form.
+// PDF catalogue only (scripts/make-catalog.mjs; run `npm run catalog` after changing a product):
+//   fullDescription  longer text for the catalogue (default: description)
+//   catalogPhoto     photo file in src/assets/ for the catalogue instead of the site's photo
+//   inCatalog: false leave the product out of the catalogue
 // Do not add dimensions, quantities, packaging, lead times or prices: these are agreed with each customer.
 // New photo: add the .webp to src/assets/, run `npm run thumbnails`, then add the product here.
 export const productGroups = [
@@ -40,6 +44,8 @@ export const productGroups = [
       {
         name: "Standardna iglica",
         description: "Prodaje se zasebno ili uz brzovez i šetajuću mehaniku.",
+        fullDescription:
+          "Iglica za mehanizme fascikli – isporučuje se zasebno ili zajedno sa brzovezom ili šetajućom mehanikom.",
         ...photo("Standardna iglica.webp"),
         alt: "Standardna iglica – tanka metalna traka za mehanizme fascikli",
       },
@@ -58,9 +64,13 @@ export const productGroups = [
       {
         name: "Lajsna za kalendare",
         description: "Povezuje listove zidnog kalendara i služi za njegovo kačenje.",
+        fullDescription:
+          "Metalna lajsna koja se postavlja na vrh zidnog kalendara, povezuje listove i služi za kačenje.",
         ...photo("Lajsna za kalendare.webp"),
+        // The catalogue shows the strip alone; the photo above (mounted) illustrates the mounting service there
+        catalogPhoto: "Lajsna za kalendare do 1m duzine.webp",
         alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
-      }
+      },
     ],
   },
   {
@@ -70,6 +80,7 @@ export const productGroups = [
       {
         name: "Zakačka za klik-klak ramove",
         description: "Postavlja se na poleđinu klik-klak rama, za kačenje na zid.",
+        fullDescription: "Metalna zakačka koja se postavlja na poleđinu klik-klak rama i služi za kačenje na zid.",
         ...photo("Zakacka za klik klak ramove.webp"),
         alt: "Metalna zakačka za kačenje klik-klak rama",
       },
@@ -100,11 +111,14 @@ export const productGroups = [
       {
         name: "Otvarač sa stikerom",
         description: "Sa okruglim poljem za stiker, npr. sa logotipom (na slici bez stikera).",
+        fullDescription:
+          "Otvarač za flaše sa okruglim poljem za stiker, npr. sa logotipom. Na fotografiji je prikazan bez stikera.",
         ...photo("Otvarac 2.webp"),
         alt: "Metalni otvarač za flaše sa okruglim poljem za stiker, prikazan bez stikera",
       },
       {
         name: "Opružni lim",
+        inCatalog: false, // until it has a description
         ...photo("Opruzni lim.webp"),
         alt: "Pravougaona pločica od opružnog lima",
       },

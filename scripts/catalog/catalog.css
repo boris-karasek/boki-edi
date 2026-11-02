@@ -18,6 +18,13 @@ html {
   print-color-adjust: exact;
 }
 
+/* Gradients cover exactly their box: otherwise Chrome's PDF shows a thin line along the right edge of
+   boxes with rounded corners */
+* {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
 body {
   font-family: "Catalog Sans", sans-serif;
   font-size: 12pt;
@@ -103,7 +110,7 @@ ol {
   height: 1.8mm;
   margin-top: 3.5mm;
   border-radius: 1mm;
-  background: linear-gradient(to right, #2dd4bf, #164e63); /* teal 400 -> cyan 900 */
+  background-image: linear-gradient(to right, #2dd4bf, #164e63); /* teal 400 -> cyan 900 */
 }
 
 .page-header {
@@ -117,7 +124,7 @@ ol {
   height: 200mm;
   padding: 32mm 18mm 0;
   color: #fafaf9; /* stone 50 */
-  background: linear-gradient(120deg, #1c1917 20%, #115e59 75%, #134e4a 100%); /* stone 900 -> teal */
+  background-image: linear-gradient(120deg, #1c1917 20%, #115e59 75%, #134e4a 100%); /* stone 900 -> teal */
 }
 
 .cover-brand {
@@ -138,7 +145,7 @@ ol {
   width: 42mm;
   height: 2.2mm;
   margin-top: 7mm;
-  background: linear-gradient(to right, #2dd4bf, #0e7490); /* teal 400 -> cyan 700 */
+  background-image: linear-gradient(to right, #2dd4bf, #0e7490); /* teal 400 -> cyan 700 */
 }
 
 .cover-lead {
@@ -207,7 +214,7 @@ ol {
   justify-content: center;
   font-size: 18mm;
   color: #5eead4;
-  background: linear-gradient(135deg, #115e59, #1c1917);
+  background-image: linear-gradient(135deg, #115e59, #1c1917);
 }
 
 /* --- Intro page ------------------------------------------------------------------------------ */
@@ -225,7 +232,7 @@ ol {
   margin-top: 10mm;
   padding: 9mm;
   border-radius: 5mm;
-  background: linear-gradient(to left, #134e4a, #115e59, #1c1917); /* like the site's benefits panel */
+  background-image: linear-gradient(to left, #134e4a, #115e59, #1c1917); /* like the site's benefits panel */
 }
 
 .benefits li {
@@ -370,7 +377,7 @@ ol {
   border-radius: 4mm;
   border-bottom: none;
   grid-template-columns: 70mm 1fr;
-  background: linear-gradient(to left, #134e4a, #115e59, #1c1917);
+  background-image: linear-gradient(to left, #134e4a, #115e59, #1c1917);
 }
 
 .service .overline {
@@ -414,6 +421,11 @@ ol {
   color: #44403c;
 }
 
+/* Centers the first line of each step on its number */
+.steps p {
+  padding-top: 1.4mm;
+}
+
 .steps .step-number {
   flex: none;
   width: 10mm;
@@ -424,7 +436,7 @@ ol {
   justify-content: center;
   font-weight: 700;
   color: #ffffff;
-  background: linear-gradient(135deg, #14b8a6, #164e63); /* like the site's main button */
+  background-image: linear-gradient(135deg, #14b8a6, #164e63); /* like the site's main button */
 }
 
 .contact-section {
@@ -441,7 +453,7 @@ ol {
 .contact-panel {
   padding: 6mm;
   border-radius: 5mm;
-  background: linear-gradient(to right, #0f766e, #14b8a6 60%, rgba(20, 184, 166, 0));
+  background-image: linear-gradient(to right, #0f766e, #14b8a6 60%, #ffffff);
 }
 
 .contact-card {

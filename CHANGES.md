@@ -5,6 +5,128 @@ Newest session first.
 
 ---
 
+## Session 3 — 2026-11-02 (branch `reorganisation`)
+
+Topic: product groups as tabs, scroll animations, hover zoom on product cards, and removing the switched-off image background. Nothing was merged or deployed.
+
+### Links for customers
+
+Each product group has its own link. It opens the products section with that group's tab selected. These links work once the branch is deployed.
+
+| Group | Link |
+|---|---|
+| Fascikle i registratori | https://www.boki-edi.com/#fascikle |
+| Kalendari | https://www.boki-edi.com/#kalendari |
+| Ramovi i A table | https://www.boki-edi.com/#ramovi |
+| Ostalo | https://www.boki-edi.com/#ostalo |
+
+Other links that keep working:
+
+- all products (first group open): https://www.boki-edi.com/#proizvodi
+- contact: https://www.boki-edi.com/#kontakt
+- an inquiry with the subject already filled in: click "Pošaljite upit" on a product and copy the address from the browser. Example: https://www.boki-edi.com/?proizvod=Brzovez#kontakt
+
+The group ids (`fascikle`, `kalendari`, `ramovi`, `ostalo`) are set in `src/data/products.js`. Don't change them once links have been sent.
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| Cleanup | Removed the switched-off image background: <ul><li>the `.page-bg-image` CSS</li><li>`scripts/make-backgrounds.mjs` and its `backgrounds` npm script</li><li>the image sections of the design brief (recoverable from `ca1c42e` / `e063139`)</li></ul> Browserslist data was updated too, so `npm run build` prints no notes or warnings. | `c18d68c` |
+| Product tabs | The group chips became a tab row: <ul><li>tablist / tab / tabpanel roles, ←/→/Home/End, a focus ring</li><li>"Fascikle i registratori" open by default, 250 ms crossfade</li><li>all groups in the pre-rendered HTML; inactive ones are invisible</li><li>the panel area is as tall as the tallest group, so nothing below moves</li><li>one tab row that scrolls sideways on a phone</li><li>the shared note is now below the panel</li></ul> | `b74a814` |
+| Deep links | `/#fascikle`, `/#kalendari`, `/#ramovi`, `/#ostalo` open that tab, with the tab row visible below the header | `b74a814` |
+| Scroll animations | Fade in with a 20 px upward move, 500 ms, once each: <ul><li>section headings</li><li>benefit items (staggered)</li><li>product cards (staggered 60 ms)</li><li>contact blocks</li></ul> The hero shows immediately; its 1 s fade-in was removed. | `64af525` |
+| Hover zoom | The photo zooms to 1.05 inside its box and the card lifts 4 px (250 ms). Only on devices with a mouse; keyboard focus gets the same highlight; off with reduced motion. Three card images were re-framed so no part is cut off while zoomed. | `3721329` |
+| Screenshots | `docs/screenshots/` retaken; the brief's page measurements updated | `8d28084` |
+
+**Page height:** 2008 px at 1366×768, down from 3112, and 3282 px at 390×844, down from 4718. This resolves the Session 2 question about the products section being 2.2 screens tall. It now takes 366 px on desktop.
+
+**Verified locally** (headless Chrome on the built site, served with the `vercel.json` rules; nothing deployed):
+
+- **Clean build:** `npm run build` prints only the three pre-render lines.
+- **Tabs, at 1366×768 and 390×844** (24 checks each):
+  - mouse and keyboard, including wrap-around, Home/End and the Tab key into the visible group
+  - **layout shift 0**: the panel height, the note and `#kontakt` stay at the same pixel position for every switch
+  - the tab row is one line (on a phone it scrolls, keeping the selected tab in view without moving the page)
+  - all four deep links
+  - inquiry and lightbox from non-default tabs
+- **Built HTML:** contains all 12 product names and 11 descriptions.
+- **No hydration warnings** with a development-React build on five entry URLs. A deliberately changed HTML was detected, so the check works.
+- **Animations:**
+  - play once, staggered
+  - nothing on the first screen is hidden
+  - layout shift 0 during load and scrolling
+  - with reduced motion nothing moves (no crossfade, no smooth scroll)
+  - with JavaScript disabled everything is visible: all four groups with their titles, no tab row
+- **Hover:**
+  - on every card; screenshots of the 5 long parts while zoomed show their ends inside the box
+  - no zoom after a tap with touch emulation, or with reduced motion
+  - keyboard focus gets the same highlight
+- **Unchanged and still working:**
+  - menu and mobile menu
+  - `/products` and `/contact` → 308
+  - real 404
+  - inquiry → contact form (send and failure simulated; no emails sent)
+  - no console errors
+
+### Decisions
+
+- **Tabs only with JavaScript.** A one-line script in `index.html` adds the class `js` to `<html>` before the page is drawn, and the tab layout applies only then.
+  - There's no flicker and no hydration mismatch.
+  - Without JavaScript the page shows all groups one below the other.
+  - The group titles (h3) stay in the HTML; with tabs they're visually hidden, because the tab shows the name.
+- **Constant panel height from CSS, not JavaScript.** All groups sit in the same grid cell, so the area is as tall as the tallest group at every width.
+  - On a phone, "Kalendari" (2 cards) leaves empty space below its cards. That's the price of nothing jumping.
+- **Clicking a tab doesn't change the address.** Deep links work in, and on a fresh load the selected tab switches right after the page starts.
+- **Reveal without hiding visible content.** The starting state is applied by the app after it starts, and only to elements still below the screen.
+  - No animation library was added; about 1 KB of code.
+  - Cards in the other tabs are revealed together with the visible ones, so switching tabs is only the crossfade.
+- **Hover zoom 1.05 for all cards** (your choice). Card images keep at least 25 px of background around each part; the zoom hides about 16 px.
+  - Šetajuća mehanika and Standardna iglica: a slightly wider crop. On iglica the photo's edge shadow is now a little more visible.
+  - Lajsna runs almost edge to edge, so 60 px of the photo's own edge is added first (new `extend` option in `scripts/make-thumbnails.mjs`).
+- **Image background dropped;** the CSS brushed steel stays.
+
+### How it works now (additions to Session 2)
+
+- **Product tabs:** `src/sections/Products.jsx`, plus the "Product tabs" rules in `src/index.css`. The tab order is the group order in `src/data/products.js`. A new group automatically gets a tab and a link (`/#<id>`).
+- **Scroll reveal:** add `{...revealProps(index)}` (from `src/hooks/useRevealOnScroll.js`) to an element to make it fade in. The index staggers items 60 ms apart.
+- **Hover zoom:** the "Product card hover" rules in `src/index.css`.
+- **New photo:** as before (`npm run thumbnails`), but also check that the part has about 20 px of background on every side of the card image, for the hover zoom. If needed, adjust `zoom` or use `extend` in `FRAMING`.
+- **Screenshots:** `npm run build`, then `npm run screenshots`.
+
+### Open questions / next steps
+
+- [ ] **Merge and deploy:** see the checklist below.
+- [ ] **Standardna iglica photo:** the edge shadow is slightly more visible after re-framing; a re-shoot would fix it.
+- [ ] **Still open from Session 1:**
+  - Opružni lim description
+  - who supplies the sticker on "Otvarač sa stikerom"
+  - Metalni završeci for planners
+  - info@ forwarding
+  - Vite upgrade (the remaining `npm audit` notes are in build tools only)
+
+### Merge-and-deploy checklist
+
+1. **Pull request** `reorganisation` → `main`. Review it, then merge.
+2. **Vercel → Project → Settings → Build and Deployment:**
+   - Framework Preset: Vite
+   - Build Command: `npm run build` (not `vite build`)
+   - Output Directory: `dist`
+   - Node.js: 20 or newer (`package.json` asks for ≥ 20)
+   - Environment variable `REACT_APP_EMAILJS_PUBLIC_KEY` still set
+3. **Vercel → Domains:** set the `boki-edi.com` → `www.boki-edi.com` redirect to **308 (permanent)**. It is 307 now.
+4. **After the deployment is live:**
+   - `curl -I https://www.boki-edi.com/products` → `308`, `location: /#proizvodi`
+   - `curl -I https://www.boki-edi.com/contact` → `308`, `location: /#kontakt`
+   - `curl -I https://boki-edi.com/` → `308` to `https://www.boki-edi.com/`
+   - open the four group links above and a product inquiry; send yourself one real test message from the form
+   - paste `https://www.boki-edi.com/` into a Viber or WhatsApp chat (to yourself): the preview should show the title and `og-image.jpg`. If an old preview appears, it is cached; try again later or add `?v=2` to the link once.
+5. **Google Search Console:**
+   1. Sitemaps → resubmit `https://www.boki-edi.com/sitemap.xml` (one URL)
+   2. URL inspection → `https://www.boki-edi.com/` → Request indexing
+
+---
+
 ## Background session — 2026-11-02 (branch `reorganisation`)
 
 Topic: the page background only. Result: a new **brushed-steel background**, chosen by the owner from four CSS variants. Nothing else on the site changed. Nothing was merged or deployed.
@@ -65,7 +187,7 @@ Topic: the page background only. Result: a new **brushed-steel background**, cho
 
 - [x] Choose the background: brushed steel. The switcher and `dev/` were removed (`65a0c3e`, `14da125`).
 - [x] Delete the leftover temp folder `/tmp/boki-edi-chrome-BLH2e3`.
-- [ ] **AI image: add it or drop it?** Until the image files exist in `public/backgrounds/`, `npm run build` prints four harmless notes: `/backgrounds/… didn't resolve at build time`.
+- [x] **AI image: add it or drop it?** → dropped in Session 3 (`c18d68c`). Until the image files exist in `public/backgrounds/`, `npm run build` prints four harmless notes: `/backgrounds/… didn't resolve at build time`.
   - **Add it:** follow the steps above.
   - **Drop it:** delete the `.page-bg-image` rules from `src/index.css`, and `scripts/make-backgrounds.mjs` with its `backgrounds` npm script.
 
@@ -147,7 +269,7 @@ Topic: the page background only. Result: a new **brushed-steel background**, cho
   - `curl -I https://www.boki-edi.com/products` should return `308` with `location: /#proizvodi` (the same for `/contact`)
   - the redirects were only verified locally
 - [ ] **Search Console:** after deploying, resubmit `sitemap.xml`. It now has one URL; the old `/products` and `/contact` will drop out over time because of the 308s.
-- [ ] **Products section height:** about 2.2 screens at 1366×768 (target "about 2"). To get closer, the 4:3 boxes could become slightly wider (16:10). Your call.
+- [x] **Products section height:** about 2.2 screens at 1366×768 (target "about 2"). To get closer, the 4:3 boxes could become slightly wider (16:10). Your call. → Resolved in Session 3: the groups are tabs; the section is now 366 px tall on desktop.
 - [ ] **Standardna iglica photo:** it has a soft shadow along one edge that can't be cropped away without cutting the part. A re-shoot on a plain background would fix it.
 - [ ] **Still open from Session 1:**
   - Opružni lim description

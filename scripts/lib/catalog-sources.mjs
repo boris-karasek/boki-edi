@@ -20,13 +20,19 @@ const SOURCES = [
 ];
 
 const TEXT_FILES = /\.(js|mjs|jsx|css|json|txt|html|md)$/;
+// Files that macOS and Windows add to folders by themselves (not in git)
+const SYSTEM_FILES = /^(\..*|Thumbs\.db|desktop\.ini)$/i;
 
 export async function catalogSourceHash(rootDir) {
   const files = [];
   for (const source of SOURCES) {
     if (source.endsWith("/")) {
       const entries = await fs.readdir(path.join(rootDir, source), { withFileTypes: true });
-      files.push(...entries.filter((entry) => entry.isFile()).map((entry) => source + entry.name));
+      files.push(
+        ...entries
+          .filter((entry) => entry.isFile() && !SYSTEM_FILES.test(entry.name))
+          .map((entry) => source + entry.name)
+      );
     } else {
       files.push(source);
     }

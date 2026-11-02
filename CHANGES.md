@@ -5,6 +5,73 @@ Newest session first.
 
 ---
 
+## Background session — 2026-11-02 (branch `reorganisation`)
+
+Topic: the page background only. The site looks exactly as before. Nothing was merged or deployed.
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| Design brief | `docs/design-brief.md`: <ul><li>palette with hex values and where each color is used</li><li>fonts and measured layout</li><li>where the background shows</li><li>the current CSS</li><li>the recommendation</li><li>image sizes and safe zones</li><li>prompts for an image AI</li><li>CSS variants with their contrast check</li></ul> | `74313b1` |
+| Screenshots | `docs/screenshots/`: first screen at 1920×1080, 1366×768, 390×844; whole page at 1366 and 390 wide; `variants/`: first screen of each variant at 1366×768 and 390×844. Retake with `npm run screenshots` (after a build); add `-- --variants` for the variants. | `179bed0` |
+| CSS variants to compare | Four backgrounds without images in `dev/background-variants.css`: <ol><li>brushed steel</li><li>steel blue with fine grain</li><li>technical-drawing grid</li><li>plain with a band behind the products</li></ol> Open the site with `?bg=1` … `?bg=4`; a panel in the bottom-left corner switches between them. `?bg=0` or no parameter is the current background. | `fe9a354` |
+| Image background, ready but off | `.page-bg-image` in `src/index.css` shows an image behind the top of the page that fades into the background below (desktop/phone, 1× and 2×, webp). `npm run backgrounds` makes the four files from an AI image. `?bg=img` previews it. | `ca1c42e` |
+
+**Measured:**
+
+- page height: 3112 px at 1920×1080 and at 1366×768; 4718 px at 390×844
+- background beside the panels: 408 / 131 / 16 px per side
+
+**Contrast:** all variants pass WCAG AA for every text that sits directly on the background. The weakest normal text is at 7.0:1. Details are in the brief, section 10.
+
+**Verified locally:**
+
+- `?bg=1…4` and the panel work in `npm run dev` and in `npm run preview`
+- `?bg=img` was tested with temporary test images, which were deleted afterwards
+- the production build contains no trace of the switcher (`dist/` checked)
+- `/`, `/products` and `/contact` (308) still work
+
+### Decisions
+
+- **Recommended background: an image only behind the top of the page, with CSS below.** Below the hero the background shows only in side strips (16 px on a phone), and the page is 3100–4700 px tall and grows with every product. A full-page image would be mostly hidden and stretched. `background-attachment: fixed` doesn't work on iOS Safari. AI tiles rarely repeat without visible seams. The CSS variant and the image are independent: pick a variant now, add an image later or never.
+- **The switcher can't be in the production build, but has to work in `npm run preview`** (which serves the production build). So it lives in `dev/`, outside `src/`, and two local-only things add it to the page:
+  - a Vite plugin with `apply: "serve"` (dev server only)
+  - `scripts/preview.mjs` (local only)
+- **Variant colors change within the first ~1500 px** instead of over the whole page height. The top of the page then looks the same on every screen and doesn't shift when products are added. Today's gradient is spread over the whole page.
+- **Variant 4's band uses `border-image`**, so it doesn't widen the page or cut off the benefits panel's shadow.
+- **Screenshot tooling:** the screenshot script uses the installed Chrome over the DevTools protocol, so there are no new packages. Whole-page screenshots are JPG because as PNG they were over 1.5 MB.
+- **Image files go in `public/backgrounds/`** with fixed names, so switching the image on needs no file names in the code.
+
+### How to switch the background later
+
+- **Compare:**
+  - run `npm run dev` and open `http://localhost:5173/?bg=1`
+  - or `npm run build`, then `npm run preview` and open `http://localhost:4173/?bg=1`
+  - go through `?bg=0`, `?bg=1` … `?bg=4`, or use the panel in the bottom-left corner
+- **Make a CSS variant permanent:** see the open task below.
+- **Add an AI image:**
+  1. Generate it with the prompts in `docs/design-brief.md`, section 9.
+  2. Run `npm run backgrounds -- desktop.png phone.png`.
+  3. Check with `?bg=img`.
+  4. In `src/pages/RootLayout.jsx`, change `className="background-div"` to `className="background-div page-bg-image"`. That is the one-line change.
+
+### Open questions / next steps
+
+- [ ] **Choose the background** (variant 0–4, with or without an image). Then, in the next step:
+  - move the chosen variant's rules into `.background-div` in `src/index.css`, or switch the image on in `RootLayout.jsx`
+  - remove the switcher:
+    - the `dev/` folder
+    - the `backgroundSwitcher` plugin in `vite.config.js`
+    - the injection in `scripts/preview.mjs`
+    - the `--variants` option and `docs/screenshots/variants/` in `scripts/screenshots.mjs`
+  - retake the screenshots
+- [ ] **Build notes:** until the image files exist in `public/backgrounds/`, `npm run build` prints four harmless notes: `/backgrounds/… didn't resolve at build time`. They go away when the image is added. If no image is wanted, delete the `.page-bg-image` rules from `src/index.css`.
+- [ ] **Leftover temp folder:** `/tmp/boki-edi-chrome-BLH2e3` was left by one interrupted screenshot run and can be deleted. The script now cleans up reliably.
+- [ ] Session 2 open questions are unchanged (see below).
+
+---
+
 ## Session 2 — 2026-10-30 (branch `reorganisation`)
 
 ### Done

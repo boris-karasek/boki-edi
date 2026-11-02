@@ -5,7 +5,7 @@
 //        (first screens and full pages -> docs/screenshots/)
 //
 // The script starts its own preview server (scripts/preview.mjs) on port 4179, so `npm run preview`
-// can keep running. Set CHROME=/path/to/chrome if Chrome is not at /usr/bin/google-chrome.
+// can keep running. Set CHROME=/path/to/chrome if Chrome is not found (see scripts/lib/chrome.mjs).
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";

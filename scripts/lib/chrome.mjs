@@ -1,12 +1,32 @@
 // Headless Chrome for the build scripts (screenshots, PDF catalogue): starts the installed Google Chrome
 // and talks to it over the DevTools protocol, so no extra npm packages are needed.
-// Set CHROME=/path/to/chrome if Chrome is not at /usr/bin/google-chrome.
+// Chrome is looked for in its usual place on Linux, macOS and Windows; set CHROME=/path/to/chrome if it
+// is installed elsewhere.
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-const chromePath = process.env.CHROME ?? "/usr/bin/google-chrome";
+const CHROME_PATHS = {
+  linux: ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
+  darwin: ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"],
+  win32: [
+    path.join(process.env.PROGRAMFILES ?? "C:\\Program Files", "Google\\Chrome\\Application\\chrome.exe"),
+    path.join(process.env["PROGRAMFILES(X86)"] ?? "C:\\Program Files (x86)", "Google\\Chrome\\Application\\chrome.exe"),
+    path.join(process.env.LOCALAPPDATA ?? "", "Google\\Chrome\\Application\\chrome.exe"),
+  ],
+};
+
+function findChrome() {
+  if (process.env.CHROME) {
+    if (!existsSync(process.env.CHROME)) throw new Error(`Chrome not found at CHROME=${process.env.CHROME}`);
+    return process.env.CHROME;
+  }
+  const found = (CHROME_PATHS[process.platform] ?? []).find((candidate) => existsSync(candidate));
+  if (!found) throw new Error("Google Chrome not found. Install it, or set CHROME=/path/to/chrome.");
+  return found;
+}
 
 // --- Minimal DevTools protocol client ---------------------------------------------------------
 
@@ -55,6 +75,7 @@ export function connect(wsUrl) {
 }
 
 export async function launchChrome() {
+  const chromePath = findChrome();
   const profileDir = await fs.mkdtemp(path.join(os.tmpdir(), "boki-edi-chrome-"));
   const chrome = spawn(
     chromePath,

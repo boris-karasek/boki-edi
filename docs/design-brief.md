@@ -2,9 +2,9 @@
 
 Boki-Edi (boki-edi.com) is a one-person workshop in Dobanovci, Belgrade, that has made small metal hardware since 2007. Its customers are other businesses: calendar printers and makers of folders, binders, planners and snap frames. The site is a single scrolling page: header, headline (hero), benefits, products, contact, footer.
 
-This brief describes the current design as built, so that a new page background (CSS or an AI-generated image) fits it. All values were taken from the code and measured in headless Chrome on the built site (November 2026, branch `reorganisation`).
+This brief describes the current design as built, so that changes to the page background fit it. All values were taken from the code and measured in headless Chrome on the built site (November 2026, branch `reorganisation`).
 
-> **Status, 2 November 2026:** the brushed-steel background (variant 1 in section 10) was chosen and is now the page background. The other variants and the temporary switcher were removed. Sections 1, 5 and 6 describe the new background. The image from sections 7–9 is still optional.
+> **Status, 2 November 2026:** the brushed-steel background (variant 1 in section 8) was chosen and is now the page background. The other variants and the temporary switcher were removed. Sections 1, 5 and 6 describe it. An image background is not planned; the prepared image option was removed (section 7).
 
 Contents:
 
@@ -14,11 +14,9 @@ Contents:
 4. Where the background is visible
 5. Current background CSS
 6. Screenshots
-7. Recommendation: which kind of background
-8. Image specification
-9. Prompt for an image-generation AI
-10. CSS-only alternatives compared (variant 1 chosen)
-11. How to change the background later
+7. No image background
+8. CSS-only alternatives compared (variant 1 chosen)
+9. How to change the background later
 
 ---
 
@@ -196,7 +194,7 @@ The brushed-steel background, chosen on 2 November 2026. From `src/index.css`:
 2. **Light.** A soft white glow from the top left, 650 px high.
 3. **Gradient.** Gray-blue, settling at `#e3e8ed` 1400 px from the top. Because the stops are in pixels rather than percentages, the top of the page looks the same on every screen and doesn't change when products are added.
 
-Measured colors behind the text: `#eaedf0`–`#f8fafb` behind the hero text, and `#d9dfe4`–`#e3e8ed` behind "KONTAKT". Contrast is 7.1:1 or better everywhere (section 10).
+Measured colors behind the text: `#eaedf0`–`#f8fafb` behind the hero text, and `#d9dfe4`–`#e3e8ed` behind "KONTAKT". Contrast is 7.1:1 or better everywhere (section 8).
 
 **The previous background** (until 2 November 2026) was:
 
@@ -231,161 +229,23 @@ The comparison screenshots of all five backgrounds were removed together with th
 
 ---
 
-## 7. Recommendation: which kind of background
+## 7. No image background
 
-**Recommended: an image only behind the top of the page (header, hero and benefits), fading out into a calm CSS background below.**
+The page background is CSS only (the brushed steel), with no image. An image behind the top of the page had been prepared and left switched off. It was removed on 2 November 2026 (Session 3), together with its helper script, because no AI image is planned. Reasons for CSS:
 
-| Approach | Verdict |
-|---|---|
-| **Image behind the hero, gradient or plain below** | **Recommended.** See the reasons below. |
-| Seamless tileable texture for the whole page | Works at any page height and is small. However, image AIs rarely produce truly seamless tiles: seams and repeats show on large light surfaces. A quiet texture is something CSS already does in under 1 KB; the chosen brushed steel is one. |
-| One full-page image (fixed or stretched) | Not recommended. See below. |
+- below the hero, the background shows only in side strips (16 px on a phone), so an image would be mostly hidden
+- the page grows with every product
+- iOS Safari ignores `background-attachment: fixed`
+- the brushed steel costs under 1 KB
 
-**Why an image behind the hero:**
+**To bring the image option back,** restore it from git history:
 
-- The hero is the only place where the background is seen as a large surface: full width and 388–592 px high, about half of the first screen.
-- Below the hero, the background shows only in side strips (131 px on a laptop, **16 px on a phone**) and through the panel ends. Most of a full-page image would be hidden behind panels and cards, so its bytes would be wasted.
-- With a hero image, the composition is under control: the text position is known, so a calm safe zone can be left for it. The phone gets its own vertical image.
-- It loads once, at the top. The text does not wait for it.
-- It fades into whichever CSS background is chosen below. **The CSS background and the image are therefore independent:** the brushed steel stays below, and the image can be added later, or never.
-
-**Why not one full-page image:**
-
-- The page is 3112 px tall on desktop and 4718 px on a phone, and it grows with every new product. With `background-size: cover`, a 16:9 image would be enlarged about 2.3 times on a laptop, and much more on a phone, and cropped unpredictably. Cards and text would land on random parts of it.
-- **iOS Safari ignores `background-attachment: fixed`**, the usual way to keep one screen-sized image still while the page scrolls. It falls back to a normal scrolling background, stretched over the whole page height, so the image looks huge and blurry on every iPhone and iPad. Some Android browsers also repaint fixed backgrounds on every scroll step.
-- The working alternative is a fixed pseudo-element. Even with that, the image would still be mostly hidden behind the content.
+- the CSS (`.page-bg-image` in `src/index.css`) and `scripts/make-backgrounds.mjs`: commit `ca1c42e`
+- the image specification, safe zones and AI prompts (former sections 7–9 of this brief): commit `e063139`
 
 ---
 
-## 8. Image specification (for the recommended approach)
-
-### Where it is shown
-
-| | Desktop and tablet (≥ 768 px wide) | Phone (< 768 px) |
-|---|---|---|
-| Area | Full width, top 720 px of the page | Full width, top 760 px |
-| Scaling | `cover`, anchored at the center top | `cover`, anchored at the center top |
-| Fade | Fully visible to 432 px, then fades to transparent at 720 px | Fully visible to 456 px, then fades to transparent at 760 px |
-
-The image starts under the header and ends in a fade behind the benefits panel. Below it, the CSS background continues.
-
-### Files to produce
-
-| File (in `public/backgrounds/`) | Size (px) | Aspect | Used by |
-|---|---|---|---|
-| `top-desktop.webp` | 1920 × 720 | 8:3 | normal desktop screens |
-| `top-desktop@2x.webp` | 3840 × 1440 | 8:3 | sharp ("Retina", 4K) desktop screens |
-| `top-mobile.webp` | 450 × 800 | 9:16 | phones at 1× |
-| `top-mobile@2x.webp` | 900 × 1600 | 9:16 | phones at 2× and 3× |
-
-**What to generate:**
-
-- **Desktop:** a 21:9 image, at least 3840 px wide if the tool allows; otherwise use the tool's upscaler. `npm run backgrounds` crops it to 8:3 by trimming about 6 % from the top and the bottom.
-- **Phone:** a separate 9:16 image, at least 900 × 1600. Without one, the script cuts the phone files from the middle of the desktop image. That works, but gives a plainer result.
-
-**How the crop behaves:**
-
-- 1366-wide laptop: the middle 1366 px of the 1920 × 720 image are shown, and 277 px are cut on each side.
-- 1920 screen: the whole image is shown.
-- Wider screens: the image is scaled up slightly.
-
-### Safe zones (desktop file, 1920 × 720; double the values for the 2× file)
-
-```
- x: 0        280      536                        1384      1640      1920
- y=0   ┌────────────────────────────────────────────────────────────────┐
-       │ under the dark header (0–72): nothing important                │
- 72    ├────────┬────────┬───────────────────────────┬────────┬────────┤
-       │ cut on │ decor  │      TEXT ZONE              │ decor  │ cut on │
-       │ 1366   │ zone   │  x 536–1384, y 120–470      │ zone   │ 1366   │
-       │ screens│        │  calm, light, low detail    │        │ screens│
- 470   │        │        ├───────────────────────────┤        │        │
- 492   │        │        │ benefits panel (dark),      │        │        │
-       │        │        │ x 408–1512, y 492–632:      │        │        │
-       │        │        │ hidden                      │        │        │
- 632   ├────────┴────────┴───────────────────────────┴────────┴────────┤
-       │ fades out from 432 to 720: no key detail                       │
- 720   └────────────────────────────────────────────────────────────────┘
-```
-
-- **Text zone, x 536–1384, y 120–470:** the h1, paragraph and buttons plus a 40 px margin. It must be calm, light and low in contrast, with no lines or edges running through the text.
-- **Decor zones:** x 0–536 and x 1384–1920, y 72–600. Put the main interest within x 280–536 and x 1384–1640, so it is still visible on 1366-wide screens.
-- **Phone (450 × 800 file):** the text covers almost the whole width (x 24–366 on a 390 px screen) from y 128 to 648. The **whole image behind the text must be calm**. Detail is possible only at the very top (y 0–120, partly under the 80 px header) and faintly along the outer ~30 px of each side.
-
-### Format, size and contrast
-
-- **WebP, under 200 KB per file.** `npm run backgrounds` lowers the quality step by step (82 down to 40) until each file fits. A calm, soft image usually ends up at 30–150 KB. If the 3840 px file stays over 200 KB, the image is too busy.
-- **Contrast requirements for the text zone:**
-  - The text on top is:
-    - `#44403c`: paragraph, 18–20 px regular
-    - `#164e63`: outlined button, 18 px semibold
-    - `#134e4a`: h1, large
-  - WCAG AA needs **4.5:1** for the paragraph and the button. The most demanding of these colors is `#164e63`.
-    - **Minimum:** nothing in the text zone darker than about **`#b8b8b8`** (relative luminance 0.48).
-    - **Target:** keep the text zone at about **`#e3e3e3` or lighter** (7:1 or better), like the brushed-steel background (`#eaedf0`–`#f8fafb` behind the hero text, 7.4:1 or better).
-  - Tinted colors count by their lightness. Light steel blue `#dfe7ed` is fine; mid gray `#a0a0a0` is not.
-- **Check after switching on** (section 11): in `npm run dev`, look at a laptop-size and a phone-size window before committing.
-
----
-
-## 9. Prompt for an image-generation AI
-
-The prompts are written for tools such as Midjourney, DALL·E / ChatGPT, Imagen, Firefly or Stable Diffusion.
-
-- Generate several images and pick the calmest; calm is better than impressive here.
-- If the tool has a separate negative-prompt field, put the "Avoid" line there. Otherwise, keep it at the end of the prompt.
-
-### Desktop (21:9)
-
-```
-Wide 21:9 background image for the top of a website of a small metalworking
-workshop. A calm, very light, high-key close-up of a brushed stainless-steel
-sheet seen almost straight on, with fine horizontal brushing grain and soft,
-even, diffuse daylight from the upper left. Near the far left and far right
-edges only, a few simple flat stamped steel strips and small bent sheet-metal
-angle pieces lie on the surface, softly out of focus (shallow depth of field),
-silver-gray, matte. The whole central part of the image (the middle 45 % of the
-width) is empty, smooth, evenly lit, very light brushed metal with almost no
-detail, reserved for dark text on top. The lower fifth fades evenly into plain
-light gray. Color palette: pale cool steel gray and silver (#f1f4f7, #e2e8f0,
-#cbd5e1) with a barely visible teal-blue tint in the reflections (#0e7490 at
-very low intensity); no saturated colors, no warm tones. Low contrast, soft
-gradients, clean, quiet, minimal, industrial, photorealistic.
-
-Avoid: text, letters, numbers, rulers, measurements, logos, watermarks,
-people, hands, faces, machines, tools, sparks, fire, welding, rust, dirt,
-paper clips, staplers, pens, pins, office supplies, stationery, screws in
-piles, dark areas, deep shadows, strong highlights, glare, bokeh circles,
-vignette, frames, borders, saturated colors.
-```
-
-### Phone (9:16)
-
-```
-Vertical 9:16 version of the same scene: a calm, very light, high-key close-up
-of brushed stainless-steel sheet with fine horizontal grain and soft diffuse
-daylight from the upper left. The image is almost entirely empty, smooth,
-evenly lit light metal, reserved for dark text across the whole width from 15 %
-to 80 % of the height. Only in the two top corners, a hint of softly
-out-of-focus flat stamped steel strips, silver-gray, matte. The lower fifth
-fades evenly into plain light gray. Colors: pale cool steel gray and silver
-(#f1f4f7, #e2e8f0, #cbd5e1) with a barely visible teal-blue tint; no saturated
-colors, no warm tones. Low contrast, soft, quiet, minimal, photorealistic.
-
-Avoid: (same list as for desktop)
-```
-
-**Variations worth trying:** replace "brushed stainless-steel sheet" with any of:
-
-- "satin-finished aluminium sheet"
-- "a light gray workshop workbench with a satin steel plate"
-- "perforated light steel sheet, very shallow depth of field"
-
-Keep the rest of the prompt unchanged.
-
----
-
-## 10. CSS-only alternatives compared (variant 1 chosen)
+## 8. CSS-only alternatives compared (variant 1 chosen)
 
 These four backgrounds use no images. Their colors come from the palette above, and each costs under 1 KB. They were compared in the browser with a temporary `?bg=` switcher.
 
@@ -422,11 +282,11 @@ The background was sampled from screenshots in text-free strips right next to ea
 
 ### Decision
 
-**Variant 1, brushed steel** (2 November 2026). If an image is added later, it fades into this background.
+**Variant 1, brushed steel** (2 November 2026).
 
 ---
 
-## 11. How to change the background later
+## 9. How to change the background later
 
 ### Adjust the brushed steel
 
@@ -436,27 +296,18 @@ The rules are in `.background-div` in `src/index.css`:
 - **Light from the top left:** the `0.7` in the radial gradient.
 - **Colors:** the three stops of the linear gradient.
 
-After a change, check the contrast of the text in the hero and the section titles (limits in section 8), then retake the screenshots.
+After a change, check the contrast of the text that sits directly on the background (the hero and the section titles), then retake the screenshots (`npm run build`, then `npm run screenshots`).
 
-### Add the AI image
+**Contrast limits.** The text on the background is:
 
-1. Generate the images (section 9).
-2. Run `npm run backgrounds -- path/to/desktop.png path/to/phone.png`. This writes the four webp files to `public/backgrounds/` and prints their sizes.
-3. Switch it on. **The one-line change** is in `src/pages/RootLayout.jsx`:
+- `#44403c`: hero paragraph and the products note, 18–20 px regular
+- `#164e63`: outlined "Pogledajte proizvode" button, 18 px semibold
+- `#134e4a`: h1 and section titles, large
 
-   ```jsx
-   <div className="background-div">
-   ```
+WCAG AA needs **4.5:1** for the paragraph and the button. The most demanding color is `#164e63`.
 
-   becomes
+- **Minimum:** nothing behind this text darker than about **`#b8b8b8`** (relative luminance 0.48).
+- **Target:** about **`#e3e3e3` or lighter** (7:1 or better), as the brushed steel is now (`#eaedf0`–`#f8fafb` behind the hero text).
+- Tinted colors count by their lightness. Light steel blue `#dfe7ed` is fine; mid gray `#a0a0a0` is not.
 
-   ```jsx
-   <div className="background-div page-bg-image">
-   ```
-
-4. Check with `npm run dev` at a laptop size and a phone size (the browser's device toolbar). If you don't like it, undo the line.
-5. Build, retake the screenshots, commit.
-
-### No image after all
-
-Delete the `.page-bg-image` rules from `src/index.css`. The four build notes about `/backgrounds/…` then disappear.
+Section 8 has the measured contrast of the current background.

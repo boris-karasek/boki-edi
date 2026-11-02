@@ -25,7 +25,7 @@ html, body {
    - a gray-blue gradient that settles within the first 1400 px, so the top of the page looks the
      same on every screen and doesn't shift when products are added
    Text sits directly on it in the hero and the section titles, with contrast of 7:1 or better
-   (docs/design-brief.md, section 10). An image can be added on top of it, see .page-bg-image below. */
+   (docs/design-brief.md, section 8). */
 .background-div {
   background-color: #e3e8ed;
   background-image:
@@ -37,39 +37,4 @@ html, body {
   display: flex;
   flex-direction: column;
   width: 100%;
-}
-
-/* Optional image behind the top of the page (header, headline, benefits), fading out into the
-   page background below. Off until the class "page-bg-image" is added next to "background-div"
-   in src/pages/RootLayout.jsx. Until then the files are never requested.
-   Files (webp, under 200 KB each), made with `npm run backgrounds` (scripts/make-backgrounds.mjs):
-     public/backgrounds/top-desktop.webp     1920×720    top-desktop@2x.webp  3840×1440
-     public/backgrounds/top-mobile.webp       450×800    top-mobile@2x.webp    900×1600
-   A pseudo-element instead of background-attachment: fixed, which iOS Safari ignores. */
-.page-bg-image {
-  position: relative;
-  isolation: isolate; /* keeps the image (z-index: -1) above the page background, below the content */
-}
-.page-bg-image::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 720px;
-  z-index: -1;
-  pointer-events: none;
-  background-position: center top;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-image: url("/backgrounds/top-desktop.webp");
-  background-image: image-set(url("/backgrounds/top-desktop.webp") 1x, url("/backgrounds/top-desktop@2x.webp") 2x);
-  mask-image: linear-gradient(to bottom, #000 60%, transparent);
-}
-@media (max-width: 767px) {
-  .page-bg-image::before {
-    height: 760px;
-    background-image: url("/backgrounds/top-mobile.webp");
-    background-image: image-set(url("/backgrounds/top-mobile.webp") 1x, url("/backgrounds/top-mobile@2x.webp") 2x);
-  }
 }

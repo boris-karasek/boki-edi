@@ -11,7 +11,8 @@
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "node scripts/preview.mjs",
     "thumbnails": "node scripts/make-thumbnails.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "backgrounds": "node scripts/make-backgrounds.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

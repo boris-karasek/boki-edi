@@ -5,6 +5,174 @@ Newest session first.
 
 ---
 
+## Flyer session — 2026-11-03 (branch `reorganisation`)
+
+Topic: a one-page PDF flyer for printing houses about calendar strips, built from a reusable flyer config. The website is unchanged, and so is the catalogue's content. Nothing was merged or deployed. The merge-and-deploy checklist is at the end of this section.
+
+### The flyer
+
+- **PDF:** `public/letak-kalendari.pdf`, 1 page, 0.11 MB.
+  - Link (works once deployed): https://www.boki-edi.com/letak-kalendari.pdf
+  - It opens in the browser and saves as "Boki-Edi lajsne za kalendare.pdf".
+  - It isn't linked from the site.
+- **Image for Viber/WhatsApp:** `marketing/letak-kalendari.jpg`, 1200 × 1697 px, 151 KB. It's in the repository but not on the website.
+- **Page image for review:** `docs/flyer-preview/letak-kalendari.png`
+
+From top to bottom:
+
+1. **Band:** BOKI-EDI, "Lajsne za zidne kalendare", and "Izrada po meri i montiranje na vaše kalendare." with "Dobanovci, od 2007." on its own line.
+2. **Two photos,** 87 × 58 mm each (the catalogue's cards are 40 mm): the strip on gray, and the close-up of a mounted strip.
+3. **The 4 points:**
+   - Lajsne izrađujemo po meri, prema formatu vašeg kalendara
+   - Male i velike serije
+   - Montiranje lajsni na vaše kalendare
+   - Direktan dogovor sa proizvođačem, bez posrednika
+4. **Highlighted line:** "Kalendari za 2027: pošaljite upit na vreme." with "Cene i uslovi na upit."
+5. **Contact card:**
+   - the phone number, largest (24 pt)
+   - e-mail
+   - website
+   - a QR code to https://www.boki-edi.com/#kalendari, with "Skenirajte kod i pogledajte lajsne na sajtu:"
+6. **Other products:** "Izrađujemo i delove za fascikle i registratore, uglove za A table i drugu sitnu metalnu galanteriju. Ceo katalog: www.boki-edi.com/katalog.pdf"
+7. **Footer:** Boki-Edi · phone · website, and "Izdanje: novembar 2026"
+
+Clickable in the PDF:
+- the phone and website (in the card and the footer)
+- the e-mail
+- the QR address
+- the catalogue link
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| Shared print pipeline | <ul><li>The reusable parts of the catalogue script moved to `scripts/lib/print.mjs`:<ul><li>loading the data</li><li>HTML with the bundled fonts</li><li>icons and the QR code</li><li>Chrome printing and the page checks</li><li>the font check and page images</li></ul></li><li>The shared styles moved to `scripts/lib/print-base.css`, with the palette as CSS variables.</li><li>The fonts moved to `scripts/lib/fonts/`.</li><li>The catalogue was regenerated once: all 4 pages are pixel-identical (0 differing pixels at 150 dpi), with the same links, bookmarks and properties.</li></ul> | `f2ad1a4` |
+| Flyer generator | <ul><li>`src/data/flyers.js`: one entry per flyer</li><li>`npm run flyer` makes all flyers; `npm run flyer -- kalendari` makes one</li><li>`scripts/make-flyer.mjs` and `scripts/flyer/flyer.css`</li></ul> | `d3d38f2` |
+| The calendar flyer | The PDF, the JPG and the page image. `vercel.json` gets the readable file name for `/letak-kalendari.pdf`. | `f414f53` |
+| Build warning | `npm run build` also names flyers that may be out of date (fingerprint in `marketing/flyers.json`). | `c79ca7f` |
+
+**Checked:**
+
+- **Page:**
+  - exactly one page, viewed as an image
+  - balanced: 5–6 mm between blocks, no empty area
+  - nothing cut off: the script stops on overflow or a second page
+- **Text:** the diacritics display correctly and come out right when copied or searched.
+- **Fonts:** only the bundled Noto Sans is embedded.
+- **Photos:** 350 ppi; checked at 300 dpi.
+- **QR code:** decoded from the page image, the JPG and a 72 dpi render to exactly `https://www.boki-edi.com/#kalendari`. In `npm run preview`, that address selects the Kalendari tab and scrolls it into view, at laptop and phone size.
+- **Links in the PDF:**
+  - `tel:+381603331408` (2×)
+  - `mailto:bokiedi@gmail.com`
+  - `https://www.boki-edi.com/` (2×)
+  - `/#kalendari`
+  - `/katalog.pdf`
+- **Properties:** title "Boki-Edi – lajsne za zidne kalendare", author, subject, keywords, language `sr`, tagged.
+- **Sizes:** PDF 0.11 MB (limit 1 MB), JPG 151 KB (limit 500 KB), 1200 px wide.
+- **In `npm run preview`:** `/letak-kalendari.pdf` → 200, `application/pdf`, `Content-Disposition: inline; filename="Boki-Edi lajsne za kalendare.pdf"`. `/katalog.pdf` is unchanged. Neither page of the site links to the flyer.
+- **Safeguards:**
+  - with the headline removed, the final build was refused and nothing was written
+  - an unknown flyer name lists the existing ones
+  - a second run leaves `vercel.json` unchanged
+  - after changing the year in `flyers.js`, `npm run build` printed the flyer warning; without changes it is silent
+
+### Decisions
+
+- **Config in `src/data/flyers.js`,** next to the other texts you edit (products, about). The site doesn't use it.
+- **The points are in one column,** not 2 × 2 as in the sketch. In a half column, point 1 took three lines; in one column every point fits on one line, which is faster to read.
+- **The photo boxes are 3:2,** not 4:3. The framing is the catalogue's; the wider box trims a little gray above and below and gives the page more air.
+- **The supporting line is shown one sentence per line.** That applies to any flyer's `lead`.
+- **The JPG is taken by Chrome from the same page,** laid out for print, so it needs no extra tools.
+- **The script keeps `vercel.json` in step:** it adds the header for a flyer's PDF if it's missing, or updates the name. So a new flyer needs only a config entry. Other entries aren't touched.
+- **One fingerprint for all flyers.** Any change to `flyers.js`, the photos or the print code marks all flyers as possibly out of date. `npm run flyer` remakes them all.
+- **The catalogue was regenerated once** because its code moved into the shared modules. The pages are pixel-identical.
+
+### How to make a new flyer (e.g. for folder makers)
+
+1. In `src/data/flyers.js`, copy the `kalendari` entry under a new key (e.g. `fascikle`) and change:
+   - `file`: the output name, e.g. `"letak-fascikle"` (a-z, 0-9, -). It's also the link, so keep it unchanged once sent.
+   - `downloadName`: the name when saved, plain ASCII, e.g. `"Boki-Edi delovi za fascikle.pdf"`
+   - `title`, `headline`, `lead`
+   - `photos`: file names in `src/assets/`, framed like in the catalogue
+   - `points`
+   - `callToAction`, `priceNote`
+   - `qr`: e.g. `{ path: "/#fascikle", caption: … }`
+   - `more`
+
+   Only facts that are on the site; no dimensions, prices, quantities or lead times.
+2. `npm run flyer -- --draft fascikle`: look at `flyer-draft/letak-fascikle-nacrt.png`. Missing texts show as "[TEKST – dopuniti]".
+3. `npm run flyer -- fascikle` writes:
+   - `public/letak-fascikle.pdf`
+   - `marketing/letak-fascikle.jpg`
+   - `docs/flyer-preview/letak-fascikle.png`
+   - `marketing/flyers.json`
+   - the header in `vercel.json`
+4. Check the page image, then commit all of these and deploy.
+
+If the texts don't fit on one page, the script stops with "does not fit" or "2 pages": shorten them.
+
+### Open questions / next steps
+
+- [ ] **Before the next calendar season:** update the year in "Kalendari za 2027" (`callToAction` in `src/data/flyers.js`), run `npm run flyer`, check `docs/flyer-preview/letak-kalendari.png` and commit. The edition month updates on its own.
+- [ ] **The flyer's links and QR code work only once this branch is deployed.** Until then:
+  - `/#kalendari` opens the old home page
+  - `/letak-kalendari.pdf` and `/katalog.pdf` give a 404
+- [ ] **Messaging apps:** links in the JPG aren't clickable, and a phone can't scan a QR code shown on its own screen. Put the link in the message next to the image: https://www.boki-edi.com/letak-kalendari.pdf.
+- [ ] **Strip photo (optional):** the photo of the strip alone on gray is a small, soft original (1435 × 1920, 15 KB). It's fine at flyer size, but a new photo would sharpen both the flyer and the catalogue.
+- [ ] **Folder-maker flyer:** not made; it needs only a config entry (see above).
+- [ ] **Earlier open items are unchanged:**
+  - Opružni lim description
+  - longer product descriptions
+  - the Lajsna alt text and photo size on the site
+  - the unused `…veca.webp`
+  - the brief's screenshots
+  - the Standardna iglica reshoot
+
+### Merge-and-deploy checklist (current; replaces the one in Session 3)
+
+**Before merging**
+
+1. Check the branch:
+   - `git status`: clean
+   - `npm run build`: prints only the three pre-render lines, with no "may be out of date" warning for the catalogue or the flyers
+2. **Pull request** `reorganisation` → `main`. Review it, then merge.
+
+**Vercel**
+
+3. **Project → Settings → Build and Deployment:**
+   - Framework Preset: Vite
+   - Build Command: `npm run build` (not `vite build`)
+   - Output Directory: `dist`
+   - Node.js: 20 or newer
+   - Environment variable `REACT_APP_EMAILJS_PUBLIC_KEY` still set
+4. **Domains:** set the `boki-edi.com` → `www.boki-edi.com` redirect to **308 (permanent)**. It is 307 now.
+
+**After the deployment is live**
+
+5. Redirects:
+   - `curl -I https://www.boki-edi.com/products` → `308`, `location: /#proizvodi`
+   - `curl -I https://www.boki-edi.com/contact` → `308`, `location: /#kontakt`
+   - `curl -I https://boki-edi.com/` → `308` to `https://www.boki-edi.com/`
+6. The site:
+   - open the four group links (`/#fascikle`, `/#kalendari`, `/#ramovi`, `/#ostalo`) and a product inquiry
+   - send yourself one real test message from the form
+   - paste `https://www.boki-edi.com/` into a Viber or WhatsApp chat (to yourself): the preview should show the title and `og-image.jpg`. If an old preview appears, it is cached; try again later or add `?v=2` to the link once.
+7. **Catalogue:**
+   - `curl -I https://www.boki-edi.com/katalog.pdf` → `200`, `content-type: application/pdf`, `content-disposition: inline; filename="Boki-Edi katalog.pdf"`
+   - open the link in a browser, then save it: the file name should be "Boki-Edi katalog.pdf"
+   - on the site, click "Preuzmite katalog (PDF, 0,3 MB)" in Proizvodi and in Kontakt: both download "Boki-Edi katalog.pdf"
+   - scan the QR code on page 4 with a phone: it opens the contact section
+8. **Flyer:**
+   - `curl -I https://www.boki-edi.com/letak-kalendari.pdf` → `200`, `content-type: application/pdf`, `content-disposition: inline; filename="Boki-Edi lajsne za kalendare.pdf"`
+   - open it on a computer and scan its QR code with a phone: the site opens on the **Kalendari** tab
+   - in the PDF, click the phone, e-mail, website and "Ceo katalog" links: the last one opens the catalogue
+   - send `marketing/letak-kalendari.jpg` to yourself on Viber/WhatsApp and check that it's readable on the phone
+9. **Google Search Console:**
+   1. Sitemaps → resubmit `https://www.boki-edi.com/sitemap.xml` (one URL)
+   2. URL inspection → `https://www.boki-edi.com/` → Request indexing
+
+---
+
 ## Catalogue revision — 2026-11-03 (branch `reorganisation`)
 
 Topic: the PDF catalogue's layout only, following your feedback (too stretched and repetitive). The website is unchanged; only its download label now reads "PDF, 0,3 MB", because it comes from `src/data/catalog.json`. Nothing was merged or deployed.
@@ -213,7 +381,7 @@ Notes:
   - scan the QR code on page 7 with a phone
 
   The header was only checked locally.
-- [ ] **Merge and deploy:** the Session 3 checklist below still applies.
+- [ ] **Merge and deploy:** see the current checklist in the Flyer session at the top of this file.
 - [ ] **Still open from earlier sessions:**
   - who supplies the sticker on "Otvarač sa stikerom"
   - Metalni završeci for planners
@@ -313,7 +481,7 @@ The group ids (`fascikle`, `kalendari`, `ramovi`, `ostalo`) are set in `src/data
 
 ### Open questions / next steps
 
-- [ ] **Merge and deploy:** see the checklist below.
+- [ ] **Merge and deploy:** see the current checklist in the Flyer session at the top of this file.
 - [ ] **Standardna iglica photo:** the edge shadow is slightly more visible after re-framing; a re-shoot would fix it.
 - [ ] **Still open from Session 1:**
   - Opružni lim description
@@ -324,23 +492,7 @@ The group ids (`fascikle`, `kalendari`, `ramovi`, `ostalo`) are set in `src/data
 
 ### Merge-and-deploy checklist
 
-1. **Pull request** `reorganisation` → `main`. Review it, then merge.
-2. **Vercel → Project → Settings → Build and Deployment:**
-   - Framework Preset: Vite
-   - Build Command: `npm run build` (not `vite build`)
-   - Output Directory: `dist`
-   - Node.js: 20 or newer (`package.json` asks for ≥ 20)
-   - Environment variable `REACT_APP_EMAILJS_PUBLIC_KEY` still set
-3. **Vercel → Domains:** set the `boki-edi.com` → `www.boki-edi.com` redirect to **308 (permanent)**. It is 307 now.
-4. **After the deployment is live:**
-   - `curl -I https://www.boki-edi.com/products` → `308`, `location: /#proizvodi`
-   - `curl -I https://www.boki-edi.com/contact` → `308`, `location: /#kontakt`
-   - `curl -I https://boki-edi.com/` → `308` to `https://www.boki-edi.com/`
-   - open the four group links above and a product inquiry; send yourself one real test message from the form
-   - paste `https://www.boki-edi.com/` into a Viber or WhatsApp chat (to yourself): the preview should show the title and `og-image.jpg`. If an old preview appears, it is cached; try again later or add `?v=2` to the link once.
-5. **Google Search Console:**
-   1. Sitemaps → resubmit `https://www.boki-edi.com/sitemap.xml` (one URL)
-   2. URL inspection → `https://www.boki-edi.com/` → Request indexing
+Replaced by the current checklist in the Flyer session (2026-11-03) at the top of this file.
 
 ---
 

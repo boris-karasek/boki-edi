@@ -15,7 +15,7 @@ export const flyers = {
     headline: "Lajsne za zidne kalendare",
     lead: "Izrada po meri i montiranje na vaše kalendare. Dobanovci, od 2007.",
     photos: [
-      { file: "Lajsna za kalendare do 1m duzine.webp", alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje" },
+      { file: "Lajsna za kalendare veca.webp", alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje" },
       { file: "Lajsna za kalendare.webp", alt: "Metalna lajsna montirana na zidni kalendar" },
     ],
     points: [

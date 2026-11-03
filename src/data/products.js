@@ -67,8 +67,9 @@ export const productGroups = [
         fullDescription:
           "Metalna lajsna koja se postavlja na vrh zidnog kalendara, povezuje listove i služi za kačenje.",
         ...photo("Lajsna za kalendare.webp"),
-        // The catalogue shows the strip alone; the photo above (mounted) illustrates the mounting service there
-        catalogPhoto: "Lajsna za kalendare do 1m duzine.webp",
+        // The catalogue shows a wider shot of the mounted strip; the close-up above illustrates the
+        // mounting service there
+        catalogPhoto: "Lajsna za kalendare veca.webp",
         alt: "Metalna lajsna za zidni kalendar sa otvorom za kačenje",
       },
     ],

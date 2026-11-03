@@ -26,8 +26,11 @@ export const FRAMING = {
   // Close-up of the strip mounted on a calendar: not rotated (the calendar print would be sideways);
   // the strip runs diagonally and is cut by the frame on purpose.
   "Lajsna za kalendare.webp": { centerY: 0.5, catalog: false },
-  "Lajsna za kalendare veca.webp": { catalog: false }, // wider shot of the mounted strip; not used yet
-  // The strip alone on gray: product photo in the PDF catalogue (scripts/make-catalog.mjs)
+  // Wider shot of the mounted strip: Lajsna's photo in the PDF catalogue and on the calendar flyer. Not used
+  // by the site. The catalogue/flyer crop sits a little above the middle: the strip runs through the
+  // frame, and the calendar's large year print (not the product) stays out.
+  "Lajsna za kalendare veca.webp": { catalog: { zoom: 1, centerY: 0.4 } },
+  // The strip alone on gray: not used at the moment (kept in case it is wanted again)
   "Lajsna za kalendare do 1m duzine.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
   "Setajuca mehanika.webp": { rotate: 90, zoom: 1.05, centerY: 0.53 }, // keeps most of an edge shadow out
   "Standardna iglica.webp": { rotate: 90, zoom: 1.05, centerY: 0.55 }, // keeps most of an edge shadow out

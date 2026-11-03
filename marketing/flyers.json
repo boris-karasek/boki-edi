@@ -1,0 +1,10 @@
+{
+  "kalendari": {
+    "pdf": "public/letak-kalendari.pdf",
+    "image": "marketing/letak-kalendari.jpg",
+    "pdfBytes": 120123,
+    "imageBytes": 155117,
+    "edition": "novembar 2026",
+    "sourceHash": "18e5346571a362e7"
+  }
+}

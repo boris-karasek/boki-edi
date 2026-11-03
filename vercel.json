@@ -8,6 +8,10 @@
   ],
   "headers": [
     {
+      "source": "/letak-kalendari.pdf",
+      "headers": [{ "key": "Content-Disposition", "value": "inline; filename=\"Boki-Edi lajsne za kalendare.pdf\"" }]
+    },
+    {
       "source": "/katalog.pdf",
       "headers": [{ "key": "Content-Disposition", "value": "inline; filename=\"Boki-Edi katalog.pdf\"" }]
     },

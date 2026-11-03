@@ -9,7 +9,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { CATALOG_SOURCES, sourceHash } from "./lib/source-hash.mjs";
+import { CATALOG_SOURCES, FLYER_SOURCES, sourceHash } from "./lib/source-hash.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(rootDir, "dist");
@@ -132,12 +132,22 @@ console.log("generated  sitemap.xml");
 
 await fs.rm(ssrDir, { recursive: true, force: true });
 
-// The PDF catalogue (public/katalog.pdf) is not part of the build: it needs Chrome and is committed.
-// Warn when the data it is made from has changed since `npm run catalog` last ran.
+// The PDF catalogue (public/katalog.pdf) and the flyers (public/letak-*.pdf) are not part of the build:
+// they need Chrome and are committed. Warn when what they are made from has changed since
+// `npm run catalog` / `npm run flyer` last ran.
 const catalog = JSON.parse(await fs.readFile(path.join(rootDir, "src", "data", "catalog.json"), "utf8"));
 if (catalog.sourceHash !== (await sourceHash(rootDir, CATALOG_SOURCES))) {
   console.warn(
     "\n! public/katalog.pdf may be out of date: products, texts, photos or the catalogue layout changed\n" +
       "  since it was made. Run `npm run catalog`, check docs/catalog-preview/, then commit."
+  );
+}
+const flyers = JSON.parse(await fs.readFile(path.join(rootDir, "marketing", "flyers.json"), "utf8").catch(() => "{}"));
+const flyerHash = await sourceHash(rootDir, FLYER_SOURCES);
+const staleFlyers = Object.entries(flyers).filter(([, flyer]) => flyer.sourceHash !== flyerHash);
+if (staleFlyers.length) {
+  console.warn(
+    `\n! Flyers may be out of date: ${staleFlyers.map(([, flyer]) => flyer.pdf).join(", ")}. Texts, photos or the\n` +
+      "  layout changed since they were made. Run `npm run flyer`, check docs/flyer-preview/, then commit."
   );
 }

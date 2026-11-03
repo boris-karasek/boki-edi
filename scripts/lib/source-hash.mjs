@@ -1,31 +1,37 @@
-// Fingerprint of everything the PDF catalogue is made from: the data files, the product photos, the
-// catalogue script, its styles and fonts. `npm run catalog` stores it in src/data/catalog.json;
-// `npm run build` compares it and warns when the catalogue (public/katalog.pdf) may be out of date.
+// Fingerprints of everything a printed document is made from: the data files, the product photos, the
+// script, its styles and fonts. `npm run catalog` stores the catalogue's in src/data/catalog.json;
+// `npm run build` compares it and warns when public/katalog.pdf may be out of date.
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-// Folders are read without subfolders (src/assets/thumbs/ is not used by the catalogue)
-const SOURCES = [
-  "src/data/products.js",
+// Used by every printed document. Folders are read without subfolders (src/assets/thumbs/ is not used).
+const SHARED_SOURCES = [
   "src/data/company.js",
-  "src/data/about.js",
   "src/seo.js",
   "src/assets/",
-  "scripts/make-catalog.mjs",
-  "scripts/catalog/",
-  "scripts/catalog/fonts/",
   "scripts/lib/framing.mjs",
   "scripts/lib/pdf-info.mjs",
+  "scripts/lib/print.mjs",
+  "scripts/lib/print-base.css",
+  "scripts/lib/fonts/",
+];
+
+export const CATALOG_SOURCES = [
+  ...SHARED_SOURCES,
+  "src/data/products.js",
+  "src/data/about.js",
+  "scripts/make-catalog.mjs",
+  "scripts/catalog/",
 ];
 
 const TEXT_FILES = /\.(js|mjs|jsx|css|json|txt|html|md)$/;
 // Files that macOS and Windows add to folders by themselves (not in git)
 const SYSTEM_FILES = /^(\..*|Thumbs\.db|desktop\.ini)$/i;
 
-export async function catalogSourceHash(rootDir) {
+export async function sourceHash(rootDir, sources) {
   const files = [];
-  for (const source of SOURCES) {
+  for (const source of sources) {
     if (source.endsWith("/")) {
       const entries = await fs.readdir(path.join(rootDir, source), { withFileTypes: true });
       files.push(

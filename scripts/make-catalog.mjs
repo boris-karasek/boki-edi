@@ -17,32 +17,39 @@
 // contact. With today's 10 products that is 4 pages.
 //
 // Needs Google Chrome (scripts/lib/chrome.mjs) and, for the page images and the font check,
-// poppler-utils (pdftoppm, pdffonts). The fonts (Noto Sans, OFL) are in scripts/catalog/fonts/.
+// poppler-utils (pdftoppm, pdffonts). Shared with the flyers: scripts/lib/print.mjs, print-base.css and
+// the fonts (Noto Sans, OFL) in scripts/lib/fonts/.
 // Catalogue-only fields of a product (fullDescription, catalogPhoto, inCatalog) are described in
 // src/data/products.js; a benefit with `catalog` (src/data/about.js) becomes a service block. How the
 // photos are cropped: `catalog` in FRAMING (scripts/lib/framing.mjs).
-import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import qrcode from "qrcode-generator";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { MdBuild, MdCheckCircle, MdEmail, MdLanguage, MdLocationOn, MdPhone } from "react-icons/md";
-import { createServer } from "vite";
 
-import { catalogSourceHash } from "./lib/catalog-sources.mjs";
-import { connect, launchChrome } from "./lib/chrome.mjs";
 import { frameForCatalog } from "./lib/framing.mjs";
 import { setPdfInfo } from "./lib/pdf-info.mjs";
+import {
+  BuildError,
+  PREVIEW_DPI,
+  checkFonts,
+  editionOf,
+  esc,
+  formatMB,
+  htmlDocument,
+  icon,
+  loadSiteData,
+  printPdf,
+  qrSvg,
+  renderPreviews,
+} from "./lib/print.mjs";
+import { CATALOG_SOURCES, sourceHash } from "./lib/source-hash.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const catalogDir = path.join(rootDir, "scripts", "catalog");
 const assetsDir = path.join(rootDir, "src", "assets");
-const run = promisify(execFile);
 
 const draft = process.argv.includes("--draft");
 const OUTPUT = draft
@@ -54,7 +61,6 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const COLUMNS = 4; // cards per row; also in catalog.css (.row)
 const PHOTO_SIZE = { width: 800, height: 600 }; // about 500 dpi in the 4 cm photo box, for zooming in
 const SERVICE_PHOTO_SIZE = { width: 1600, height: 1200 }; // shown larger and cropped in the service band
-const PREVIEW_DPI = 100;
 
 // Catalogue-only texts (Serbian, Latin script). Everything else comes from the data files.
 const TEXT = {
@@ -78,33 +84,7 @@ const TEXT = {
   draft: "NACRT",
   missingDescription: "[OPIS – dopuniti]",
 };
-const MONTHS = ["januar", "februar", "mart", "april", "maj", "jun", "jul", "avgust", "septembar", "oktobar", "novembar", "decembar"];
-
-// A problem the owner can fix (missing text, size limit, layout); printed without a stack trace
-class CatalogError extends Error {}
-
 // --- Data -------------------------------------------------------------------------------------
-
-// The data files use Vite features (import.meta.glob for the photos), so they are loaded through Vite.
-async function loadSiteData() {
-  const vite = await createServer({
-    root: rootDir,
-    logLevel: "error",
-    appType: "custom",
-    server: { middlewareMode: true, hmr: false },
-    optimizeDeps: { disabled: true },
-  });
-  try {
-    const [products, { company }, about, { SITE_URL }] = await Promise.all(
-      ["/src/data/products.js", "/src/data/company.js", "/src/data/about.js", "/src/seo.js"].map((file) =>
-        vite.ssrLoadModule(file)
-      )
-    );
-    return { ...products, ...about, company, SITE_URL };
-  } finally {
-    await vite.close();
-  }
-}
 
 // File name (in src/assets/) of the photo the catalogue shows for a product; null if it has none
 function photoFile(product) {
@@ -118,10 +98,10 @@ async function preparePhotos(files, dir, size, photos = new Map()) {
   for (const file of new Set(files)) {
     const input = path.join(assetsDir, file);
     await fs.access(input).catch(() => {
-      throw new CatalogError(`Photo not found: src/assets/${file}`);
+      throw new BuildError(`Photo not found: src/assets/${file}`);
     });
     const { image, filled } = await frameForCatalog(input, file).catch((error) => {
-      throw new CatalogError(error.message);
+      throw new BuildError(error.message);
     });
     const output = path.join(dir, file.replace(/\.\w+$/, ".jpg"));
     const info = await image
@@ -150,40 +130,6 @@ function groupRows(products, services) {
 }
 
 // --- HTML -------------------------------------------------------------------------------------
-
-function esc(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-const icon = (Icon) => renderToStaticMarkup(createElement(Icon, { "aria-hidden": true }));
-
-// QR code as a vector (sharp at any zoom and in print), dark on white with the standard quiet zone
-function qrSvg(url) {
-  const qr = qrcode(0, "M");
-  qr.addData(url);
-  qr.make();
-  const count = qr.getModuleCount();
-  const quiet = 4;
-  const size = count + 2 * quiet;
-  let d = "";
-  for (let row = 0; row < count; row++) {
-    for (let col = 0; col < count; col++) {
-      if (!qr.isDark(row, col)) continue;
-      let run = 1;
-      while (col + run < count && qr.isDark(row, col + run)) run++;
-      d += `M${col + quiet} ${row + quiet}h${run}v1h-${run}z`;
-      col += run - 1;
-    }
-  }
-  return (
-    `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="QR kod: ${esc(url)}" shape-rendering="crispEdges">` +
-    `<rect width="${size}" height="${size}" fill="#ffffff"/><path d="${d}" fill="#1c1917"/></svg>`
-  );
-}
 
 // groups: [{ group, rows }] (see groupRows). The product pages are made in the browser (layoutPages).
 function buildHtml(data, photos, groups, edition) {
@@ -252,13 +198,13 @@ function buildHtml(data, photos, groups, edition) {
 
   const cover = `
     <section class="page cover-page">
-      <div class="cover-band">
-        <p class="cover-brand">${esc(company.name.toUpperCase())}</p>
-        <h1 class="cover-title">${esc(headline)}</h1>
+      <div class="band">
+        <p class="band-brand">${esc(company.name.toUpperCase())}</p>
+        <h1 class="band-title">${esc(headline)}</h1>
         <div class="bar"></div>
-        <p class="cover-lead">${esc(intro[0])}</p>
-        <p class="cover-since">${esc(company.locality)}, od ${company.foundingYear}.</p>
-        <p class="cover-site"><a href="${esc(SITE_URL)}/">${esc(siteHost)}</a></p>
+        <p class="band-lead">${esc(intro[0])}</p>
+        <p class="band-since">${esc(company.locality)}, od ${company.foundingYear}.</p>
+        <p class="band-site"><a href="${esc(SITE_URL)}/">${esc(siteHost)}</a></p>
       </div>
       <div class="about">
         <p class="intro-text">${esc(intro.slice(1).join(" "))}</p>
@@ -281,7 +227,7 @@ function buildHtml(data, photos, groups, edition) {
           <li><span class="step-number">${index + 1}</span><p>${esc(step)}</p></li>`)
           .join("")}
         </ol>
-        <p class="price-note">${esc(TEXT.priceNote)}</p>
+        <p class="callout price-note">${esc(TEXT.priceNote)}</p>
         <div class="contact-section">
           <h2 class="page-title">${esc(TEXT.contactTitle)}</h2><div class="bar"></div>
           <div class="contact-panel"><div class="contact-card">
@@ -304,36 +250,24 @@ function buildHtml(data, photos, groups, edition) {
       </div>${footer}
     </section>`;
 
-  const fontUrl = (file) => pathToFileURL(path.join(catalogDir, "fonts", file)).href;
-  const html = `<!DOCTYPE html>
-<html lang="sr">
-<head>
-<meta charset="utf-8">
-<title>${esc(TEXT.documentTitle)}</title>
-<style>
-  /* Bundled fonts under their own family name, so a system font is never used instead */
-  @font-face { font-family: "Catalog Sans"; font-weight: 400; src: url("${fontUrl("NotoSans-Regular.ttf")}") format("truetype"); }
-  @font-face { font-family: "Catalog Sans"; font-weight: 700; src: url("${fontUrl("NotoSans-Bold.ttf")}") format("truetype"); }
-</style>
-<link rel="stylesheet" href="${pathToFileURL(path.join(catalogDir, "catalog.css")).href}">
-</head>
-<body>${cover}
+  const html = htmlDocument({
+    title: TEXT.documentTitle,
+    stylesheets: [path.join(catalogDir, "catalog.css")],
+    body: `${cover}
     <div id="flow" hidden>${units}
     </div>
     <template id="product-page">
       <section class="page products-page"><div class="page-content"></div>${footer}</section>
-    </template>${contact}
-</body>
-</html>
-`;
+    </template>${contact}`,
+  });
   return { html, missing };
 }
 
 // --- PDF --------------------------------------------------------------------------------------
 
-// Runs in the page: places the product rows (#flow) on as many product pages as they need, numbers
-// the pages, then checks the result (fonts and photos loaded, nothing cut off). A group's heading
-// stays with its first row; a group that continues on a new page gets its heading again, "(nastavak)".
+// Runs in the page: places the product rows (#flow) on as many product pages as they need and numbers
+// the pages. A group's heading stays with its first row; a group that continues on a new page gets its
+// heading again, "(nastavak)". The checks afterwards are shared (checkPage in scripts/lib/print.mjs).
 const layoutPages = async (continued) => {
   await document.fonts.ready;
   const problems = [];
@@ -381,108 +315,18 @@ const layoutPages = async (continued) => {
     }
   });
 
-  for (const face of document.fonts) {
-    if (face.status !== "loaded") problems.push(`font ${face.family} ${face.weight} not loaded (${face.status})`);
-  }
-  for (const img of document.images) {
-    await img.decode().catch(() => problems.push(`photo not loaded: ${decodeURI(img.src)}`));
-  }
-  pages.forEach((page, index) => {
-    for (const part of page.querySelectorAll(".page-content, .page-footer, .cover-band, .about")) {
-      if (part.scrollHeight > part.clientHeight + 1 || part.scrollWidth > part.clientWidth + 1) {
-        problems.push(
-          `page ${index + 1}: ${part.className} does not fit (${part.scrollWidth}×${part.scrollHeight} px ` +
-            `in ${part.clientWidth}×${part.clientHeight} px)`
-        );
-      }
-    }
-  });
   return { problems, pageCount: pages.length, groupPages };
 };
-
-async function printPdf(htmlFile) {
-  const chrome = await launchChrome();
-  try {
-    const cdp = await connect(chrome.wsUrl);
-    const { targetId } = await cdp.send("Target.createTarget", { url: "about:blank" });
-    const { sessionId } = await cdp.send("Target.attachToTarget", { targetId, flatten: true });
-    const send = (method, params) => cdp.send(method, params, sessionId);
-
-    await send("Page.enable");
-    await send("Emulation.setEmulatedMedia", { media: "print" });
-    const loaded = cdp.once("Page.loadEventFired", sessionId);
-    await send("Page.navigate", { url: pathToFileURL(htmlFile).href });
-    await loaded;
-
-    const { result, exceptionDetails } = await send("Runtime.evaluate", {
-      expression: `(${layoutPages})(${JSON.stringify(TEXT.continued)})`,
-      awaitPromise: true,
-      returnByValue: true,
-    });
-    if (exceptionDetails) throw new Error(`Page layout failed: ${exceptionDetails.exception?.description}`);
-    const layout = result.value;
-    if (layout.problems.length) {
-      const message = `The catalogue layout has problems:\n  ${layout.problems.join("\n  ")}`;
-      if (!draft) throw new CatalogError(message);
-      console.warn(`  ! ${message}`);
-    }
-
-    const { data } = await send("Page.printToPDF", {
-      printBackground: true,
-      preferCSSPageSize: true,
-      generateTaggedPDF: true, // accessible PDF; also carries the language (sr)
-      generateDocumentOutline: true, // bookmarks from the headings
-      marginTop: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      marginRight: 0,
-    });
-    cdp.close();
-    return { pdf: Buffer.from(data, "base64"), layout };
-  } finally {
-    await chrome.close();
-  }
-}
-
-// Fonts embedded in the PDF: only the bundled Noto Sans (another font would mean a character that
-// Noto Sans lacks was drawn with a system font). Returns null if pdffonts is not installed.
-async function embeddedFonts(pdfFile) {
-  try {
-    const { stdout } = await run("pdffonts", [pdfFile]);
-    return stdout.split("\n").slice(2).filter(Boolean).map((line) => line.split(/\s+/)[0].replace(/^[A-Z]{6}\+/, ""));
-  } catch (error) {
-    if (error.code === "ENOENT") return null;
-    throw error;
-  }
-}
-
-async function renderPreviews(pdfFile, dir) {
-  await fs.mkdir(dir, { recursive: true });
-  for (const file of await fs.readdir(dir)) {
-    if (/^page-\d+\.png$/.test(file)) await fs.rm(path.join(dir, file));
-  }
-  try {
-    await run("pdftoppm", ["-png", "-r", String(PREVIEW_DPI), pdfFile, path.join(dir, "page")]);
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-    console.warn("  ! pdftoppm not found (poppler-utils): page images skipped");
-    return 0;
-  }
-  return (await fs.readdir(dir)).filter((file) => /^page-\d+\.png$/.test(file)).length;
-}
-
-const formatMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
 
 // --- Main -------------------------------------------------------------------------------------
 
 async function main() {
-  const data = await loadSiteData();
-  const now = new Date();
-  const edition = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const data = await loadSiteData(rootDir, ["/src/data/products.js", "/src/data/company.js", "/src/data/about.js", "/src/seo.js"]);
+  const edition = editionOf(new Date());
 
   for (const benefit of data.benefits) {
     if (benefit.catalog && !data.productGroups.some((group) => group.id === benefit.catalog.group)) {
-      throw new CatalogError(`Benefit "${benefit.title}": no product group with id "${benefit.catalog.group}"`);
+      throw new BuildError(`Benefit "${benefit.title}": no product group with id "${benefit.catalog.group}"`);
     }
   }
   const leftOut = [];
@@ -508,7 +352,7 @@ async function main() {
 
     const { html, missing } = buildHtml(data, photos, groups, edition);
     if (missing.length && !draft) {
-      throw new CatalogError(
+      throw new BuildError(
         `Missing information — the catalogue was not built:\n  ${missing.join("\n  ")}\n` +
           "Add it in src/data/, or leave the product out (inCatalog: false). To see a draft: npm run catalog -- --draft"
       );
@@ -517,8 +361,13 @@ async function main() {
     await fs.writeFile(htmlFile, html);
 
     const products = groups.flatMap((entry) => entry.products);
-    const printed = await printPdf(htmlFile);
-    const { layout } = printed;
+    const printed = await printPdf(htmlFile, {
+      prepare: layoutPages,
+      prepareArgs: [TEXT.continued],
+      checkSelectors: ".page-content, .page-footer, .band, .about",
+      draft,
+    });
+    const layout = printed.prepared;
     const pdf = setPdfInfo(printed.pdf, {
       Title: TEXT.documentTitle,
       Author: data.company.name,
@@ -527,20 +376,14 @@ async function main() {
       Creator: "npm run catalog (scripts/make-catalog.mjs)",
     });
     if (pdf.length > MAX_BYTES && !draft) {
-      throw new CatalogError(`The PDF is ${formatMB(pdf.length)}, over the 2 MB limit for e-mail attachments: lower PHOTO_SIZE`);
+      throw new BuildError(`The PDF is ${formatMB(pdf.length)}, over the 2 MB limit for e-mail attachments: lower PHOTO_SIZE`);
     }
 
     const pdfFile = path.join(rootDir, OUTPUT.pdf);
     await fs.mkdir(path.dirname(pdfFile), { recursive: true });
     const checkedFile = path.join(tempDir, "katalog.pdf");
     await fs.writeFile(checkedFile, pdf);
-    const fonts = await embeddedFonts(checkedFile);
-    const foreign = fonts?.filter((font) => !/^NotoSans-(Regular|Bold)$/.test(font)) ?? [];
-    if (foreign.length) {
-      const message = `Fonts other than the bundled Noto Sans in the PDF: ${foreign.join(", ")} (a character Noto Sans lacks?)`;
-      if (!draft) throw new CatalogError(message);
-      console.warn(`  ! ${message}`);
-    }
+    const fonts = await checkFonts(checkedFile, draft);
     await fs.copyFile(checkedFile, pdfFile);
 
     console.log(`Catalogue -> ${OUTPUT.pdf}  (${layout.pageCount} pages, ${formatMB(pdf.length)}, ${TEXT.edition}: ${edition}${draft ? ", DRAFT" : ""})`);
@@ -568,7 +411,7 @@ async function main() {
         bytes: pdf.length,
         pages: layout.pageCount,
         edition,
-        sourceHash: await catalogSourceHash(rootDir),
+        sourceHash: await sourceHash(rootDir, CATALOG_SOURCES),
       };
       await fs.writeFile(path.join(rootDir, OUTPUT.json), `${JSON.stringify(info, null, 2)}\n`);
       console.log(`Link info -> ${OUTPUT.json}  ("${info.sizeLabel}")`);
@@ -581,6 +424,6 @@ async function main() {
 try {
   await main();
 } catch (error) {
-  console.error(error instanceof CatalogError ? `\n${error.message}` : error);
+  console.error(error instanceof BuildError ? `\n${error.message}` : error);
   process.exitCode = 1;
 }

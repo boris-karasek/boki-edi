@@ -1,71 +1,5 @@
-/* Styles of the PDF catalogue (scripts/make-catalog.mjs). A4 pages of fixed size; colors from the
-   site's palette (docs/design-brief.md, section 1). The fonts are declared by the script
-   (Noto Sans from scripts/catalog/fonts/). */
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-
-/* Gradients cover exactly their box: otherwise Chrome's PDF shows a thin line along the right edge of
-   boxes with rounded corners. Use background-image (not the background shorthand) so this applies. */
-* {
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-}
-
-body {
-  font-family: "Catalog Sans", sans-serif;
-  font-size: 11pt;
-  line-height: 1.45;
-  color: #1c1917; /* stone 900 */
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-ul,
-ol {
-  list-style: none;
-}
-
-/* The PDF bookmarks are made from the headings' lines: with normal wrapping Chrome drops the space at a
-   line break ("Šetajućamehanika"); pre-wrap keeps it (it hangs invisibly at the line end). Keep heading
-   text on one line in the HTML template. */
-h1,
-h2,
-h3 {
-  white-space: pre-wrap;
-}
-
-/* --- Page frame ------------------------------------------------------------------------------ */
-
-.page {
-  position: relative;
-  width: 210mm;
-  height: 297mm;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  break-after: page;
-}
-
-.page:last-child {
-  break-after: auto;
-}
+/* Styles of the PDF catalogue (scripts/make-catalog.mjs), on top of the shared scripts/lib/print-base.css
+   (page frame, footer, title bar, dark band, photo box, callout, contact card, palette variables). */
 
 /* Everything above the footer; the script checks that nothing overflows it */
 .page-content {
@@ -75,83 +9,10 @@ h3 {
   overflow: hidden;
 }
 
-.page-footer {
-  flex: none;
-  height: 12mm;
-  margin: 0 15mm 5mm;
-  border-top: 0.3mm solid #d6d3d1; /* stone 300 */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6mm;
-  font-size: 8.5pt;
-  color: #57534e; /* stone 600 */
-}
-
-.page-footer .draft {
-  font-weight: 700;
-  color: #b91c1c; /* red 700 */
-}
-
-/* Short bar under titles, like the underline of the site's headline */
-.bar {
-  width: 24mm;
-  height: 1.5mm;
-  margin-top: 2.5mm;
-  border-radius: 1mm;
-  background-image: linear-gradient(to right, #2dd4bf, #164e63); /* teal 400 -> cyan 900 */
-}
-
 /* --- Page 1: cover and about ----------------------------------------------------------------- */
 
-.cover-band {
-  flex: none;
+.cover-page .band {
   height: 128mm;
-  padding: 22mm 15mm 0;
-  color: #fafaf9; /* stone 50 */
-  background-image: linear-gradient(120deg, #1c1917 20%, #115e59 75%, #134e4a 100%); /* stone 900 -> teal */
-}
-
-.cover-brand {
-  font-size: 14pt;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.cover-title {
-  margin-top: 15mm;
-  font-size: 40pt;
-  font-weight: 700;
-  line-height: 1.1;
-  color: #ffffff;
-}
-
-.cover-band .bar {
-  width: 40mm;
-  height: 2mm;
-  margin-top: 6mm;
-  background-image: linear-gradient(to right, #2dd4bf, #0e7490); /* teal 400 -> cyan 700 */
-}
-
-.cover-lead {
-  max-width: 150mm;
-  margin-top: 9mm;
-  font-size: 15pt;
-  line-height: 1.5;
-  color: #e7e5e4; /* stone 200 */
-}
-
-.cover-since {
-  margin-top: 7mm;
-  font-size: 13pt;
-  font-weight: 700;
-  color: #5eead4; /* teal 300 */
-}
-
-.cover-site {
-  margin-top: 1mm;
-  font-size: 12pt;
-  color: #d6d3d1; /* stone 300 */
 }
 
 /* Intro and benefits share the space below the band, centered vertically */
@@ -166,7 +27,7 @@ h3 {
 .intro-text {
   font-size: 14.5pt;
   line-height: 1.6;
-  color: #44403c; /* stone 700 */
+  color: var(--stone-700);
 }
 
 .benefits {
@@ -176,7 +37,7 @@ h3 {
   margin-top: 12mm;
   padding: 12mm 11mm;
   border-radius: 4mm;
-  background-color: #f1f4f7; /* the site's light steel gray */
+  background-color: var(--steel);
 }
 
 .benefits li {
@@ -188,7 +49,7 @@ h3 {
   flex: none;
   width: 7.5mm;
   height: 7.5mm;
-  color: #0d9488; /* teal 600 */
+  color: var(--teal-600);
 }
 
 .benefit-title {
@@ -201,7 +62,7 @@ h3 {
   margin-top: 1mm;
   font-size: 12pt;
   line-height: 1.4;
-  color: #57534e; /* stone 600 */
+  color: var(--stone-600);
 }
 
 /* --- Product pages: groups flow over as many pages as needed --------------------------------- */
@@ -229,36 +90,11 @@ h3 {
   margin-bottom: 7mm;
 }
 
-/* 4 columns of cards: photo on top, name, full description */
+/* 4 columns of cards (COLUMNS in make-catalog.mjs): photo on top, name, full description */
 .row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   column-gap: 6mm;
-}
-
-.photo {
-  display: block;
-  aspect-ratio: 4 / 3;
-  border-radius: 2.5mm;
-  overflow: hidden;
-  background-color: #c4c4c4; /* the card image box on the site */
-}
-
-.photo img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* the images are already 4:3 */
-}
-
-/* Product without a photo: icon on teal, like the site */
-.photo.no-photo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13mm;
-  color: #5eead4;
-  background-image: linear-gradient(135deg, #115e59, #1c1917);
 }
 
 .card h3 {
@@ -271,7 +107,7 @@ h3 {
   margin-top: 1.5mm;
   font-size: 11pt;
   line-height: 1.42;
-  color: #44403c;
+  color: var(--stone-700);
 }
 
 /* Service block (e.g. mounting strips on calendars): dark teal band across the free columns of the
@@ -281,13 +117,13 @@ h3 {
   grid-template-columns: 42% 1fr;
   border-radius: 2.5mm;
   overflow: hidden;
-  background-image: linear-gradient(to left, #134e4a, #115e59, #1c1917); /* like the site's benefits */
+  background-image: linear-gradient(to left, var(--teal-900), var(--teal-800), var(--stone-900)); /* like the site's benefits */
 }
 
 .service-photo {
   display: block;
   min-height: 34mm;
-  background-color: #c4c4c4;
+  background-color: var(--photo-gray);
 }
 
 .service-photo img {
@@ -307,28 +143,21 @@ h3 {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #5eead4; /* teal 300 */
+  color: var(--teal-300);
 }
 
 .service h3 {
   margin-top: 1mm;
   font-size: 13pt;
   line-height: 1.25;
-  color: #fafaf9;
+  color: var(--stone-50);
 }
 
 .service-text p:last-child {
   margin-top: 1.5mm;
   font-size: 11pt;
   line-height: 1.4;
-  color: #d6d3d1;
-}
-
-/* Missing information: clearly marked; the final catalogue is not built while any is left */
-.placeholder {
-  font-weight: 700;
-  color: #b91c1c;
-  background-color: #fee2e2;
+  color: var(--stone-300);
 }
 
 /* --- Last page: how to order and contact ----------------------------------------------------- */
@@ -357,7 +186,7 @@ h3 {
   gap: 5mm;
   font-size: 14pt;
   line-height: 1.5;
-  color: #44403c;
+  color: var(--stone-700);
 }
 
 /* Centers the first line of each step on its number */
@@ -375,18 +204,11 @@ h3 {
   justify-content: center;
   font-weight: 700;
   color: #ffffff;
-  background-image: linear-gradient(135deg, #14b8a6, #164e63); /* like the site's main button */
+  background-image: linear-gradient(135deg, var(--teal-500), var(--cyan-900)); /* like the site's main button */
 }
 
 .price-note {
   margin-top: 11mm;
-  padding: 4.5mm 5mm;
-  border-left: 1.2mm solid #14b8a6; /* teal 500 */
-  border-radius: 0 2mm 2mm 0;
-  background-color: #f1f4f7;
-  font-size: 14pt;
-  font-weight: 700;
-  color: #134e4a; /* teal 900 */
 }
 
 .contact-section {
@@ -395,75 +217,4 @@ h3 {
 
 .contact-section .bar {
   margin-bottom: 7mm;
-}
-
-/* Like the site's contact panel: teal fading to the page color, with a white card on it */
-.contact-panel {
-  padding: 6mm;
-  border-radius: 5mm;
-  background-image: linear-gradient(to right, #0f766e, #14b8a6 60%, #ffffff);
-}
-
-.contact-card {
-  display: grid;
-  grid-template-columns: 1fr 56mm;
-  gap: 8mm;
-  align-items: center;
-  padding: 11mm 9mm;
-  border: 0.3mm solid #e5e7eb; /* gray 200 */
-  border-radius: 4mm;
-  background-color: #ffffff;
-}
-
-.contact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7mm;
-}
-
-.contact-list li {
-  display: flex;
-  align-items: center;
-  gap: 4mm;
-}
-
-.contact-list svg {
-  flex: none;
-  width: 8mm;
-  height: 8mm;
-  color: #06b6d4; /* cyan 500, like the site's contact icons */
-}
-
-.contact-label {
-  font-size: 10.5pt;
-  font-weight: 700;
-  color: #374151; /* gray 700 */
-}
-
-.contact-value {
-  font-size: 15pt;
-  color: #1f2937; /* gray 800 */
-}
-
-.qr {
-  text-align: center;
-}
-
-.qr svg {
-  display: block;
-  width: 54mm;
-  height: 54mm;
-  margin: 0 auto;
-}
-
-.qr p {
-  margin-top: 2mm;
-  font-size: 10pt;
-  line-height: 1.35;
-  color: #44403c;
-}
-
-.qr .qr-url {
-  font-weight: 700;
-  color: #0e7490; /* cyan 700 */
 }

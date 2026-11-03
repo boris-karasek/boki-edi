@@ -5,11 +5,102 @@ Newest session first.
 
 ---
 
+## Catalogue revision — 2026-11-03 (branch `reorganisation`)
+
+Topic: the PDF catalogue's layout only, following your feedback (too stretched and repetitive). The website is unchanged; only its download label now reads "PDF, 0,3 MB", because it comes from `src/data/catalog.json`. Nothing was merged or deployed.
+
+### The catalogue now
+
+- **File:** `public/katalog.pdf`, 4 pages, 0.29 MB (shown as "0,3 MB").
+- **Same link:** https://www.boki-edi.com/katalog.pdf
+- **Page images:** `docs/catalog-preview/page-1.png` … `page-4.png` (the old pages 5–7 are deleted)
+
+| Page | Content |
+|---|---|
+| 1 | Cover and about, no footer: <ul><li>the dark band, now the top 43%: BOKI-EDI, "Metalni delovi po meri", underline, first hero sentence, "Dobanovci, od 2007.", website</li><li>below it: hero sentences 2–3, then the 4 benefits as a light 2 × 2 block</li></ul> |
+| 2 | Fascikle i registratori (4 cards) and Kalendari: Lajsna, with the "Montiranje lajsni na kalendare" band across the other three columns |
+| 3 | Ramovi i A table (3 cards) and Ostalo (2 cards) |
+| 4 | Kako poručiti (3 steps), "Cene i uslovi na upit." once, Kontakt with the QR code |
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| Tighter photos | <ul><li>The catalogue finds each part on the gray background and crops so it fills about 80% of its box (80–87% now; long parts can't be cropped wider than their photo).</li><li>New: `frameForCatalog` in `scripts/lib/framing.mjs`.</li><li>The site's card images are byte-identical.</li></ul> | `21f74d6` |
+| 4 pages, flowing groups | <ul><li>One card layout for every group: 4:3 photo (40.5 × 30 mm), name 13 pt, full description 11 pt, 4 per row.</li><li>Groups follow each other and share pages.</li><li>The service band sits in the Kalendari row.</li></ul> | `e9da06b` |
+| Removed | <ul><li>the contents page (the PDF bookmarks stay)</li><li>the note box on product pages</li><li>the visible "Pošaljite upit ›" (the photo and the name are now the links to `/?proizvod=<name>#kontakt`)</li><li>the "PROIZVODI" / "BOKI-EDI" labels</li><li>the cover's row of group photos</li><li>the cover's footer</li></ul> | `e9da06b` |
+| Fixes | <ul><li>**Bookmark titles of wrapped names:** Chrome dropped the space at the line break ("Šetajućamehanika").</li><li>**Service photo:** prepared larger, since the band shows it bigger than a card (410 ppi instead of 205).</li></ul> | `47c7dcb` |
+| Regenerated | PDF, page images, `catalog.json` | `ff4bd1d` |
+
+**Checked:**
+
+- **Pages:** all 4 viewed. Nothing is cut off; the script still stops on any overflow.
+- **Text:** the diacritics display correctly and come out right when copied or searched.
+- **Fonts:** only the bundled Noto Sans is embedded.
+- **Photos:** 356–502 ppi; checked at 300 dpi.
+- **QR code:** decodes to exactly `https://www.boki-edi.com/#kontakt` at 72 and 100 dpi.
+- **Links:**
+  - each product's photo and name link to its inquiry; so do the service's photo and title
+  - the footer phone and website are links
+  - no visible "Pošaljite upit" is left
+- **Bookmarks:** Metalni delovi po meri › 4 groups › their products and the service, then Kako poručiti and Kontakt. All titles are complete.
+- **Properties:** title, author, subject, keywords, language `sr`, tagged.
+- **Flow test** (temporary data, restored afterwards): with 13 Fascikle products and Opružni lim back in:
+  - Fascikle continued on page 3 under "Fascikle i registratori (nastavak)"
+  - Kalendari followed on page 3
+  - Ramovi and Ostalo moved to page 4, contact to page 5, and the page numbers changed to "x / 5"
+  - Opružni lim showed its red placeholder in the draft
+- **Placeholder rule:** with Opružni lim back in, the final build was refused (exit code 1) and nothing was written.
+- **Site:** `npm run build` prints no "out of date" warning; `dist/katalog.pdf` is the new file.
+
+### Layout rule (replaces the rule in the Catalogue session)
+
+- **Page order:**
+  1. cover and about
+  2. the product groups, in the order of `products.js`
+  3. how to order and contact
+- **Products:** 4 cards per row (`COLUMNS` in `scripts/make-catalog.mjs` and `.row` in `catalog.css`).
+- **A service block** (a benefit with `catalog` in `about.js`) takes the free columns of its group's last row if at least 2 are free. Otherwise it gets a row of its own.
+- **Pages are filled in order:**
+  - Each row is placed on the current page; if it doesn't fit, it starts a new page.
+  - A group heading always moves together with its first row.
+  - A group that continues on a new page gets its heading again, with "(nastavak)".
+  - A new page is added only when needed. Today a new row of cards needs about 90 mm, and pages 2 and 3 have about 55 mm free.
+
+  So:
+  - Opružni lim fits in the Ostalo row.
+  - A 5th product in any group starts a new row, and the catalogue grows to 5 pages.
+- **Photo framing:**
+  - Automatic: the part fills about 80% of the box.
+  - Per photo in `FRAMING` (`scripts/lib/framing.mjs`):
+    - `catalog: { fill: 0.75 }`: another share of the box
+    - `catalog: { zoom, centerX, centerY }`: a fixed crop, if detection goes wrong
+    - `catalog: false`: the site's crop (used for the mounted-strip photo)
+  - If no part is found, `npm run catalog` stops with a message naming the photo.
+
+### Open questions / next steps
+
+- [ ] **Free space on pages 2 and 3:** about 55 mm (20%) at the bottom of each. With 4 columns the photo boxes can't grow, and the next group's heading plus its first row (~90 mm) doesn't fit there. I left the space at the bottom rather than spreading the groups apart. It fills up as products are added. If you'd rather have it smaller now, the options are:
+  - square photo boxes (taller cards; long parts get more gray above and below)
+  - spreading the leftover space between the two groups on a page
+- [ ] **Standardna iglica:** after the crop, the shadow along its upper edge is still visible. The reshoot is still planned.
+- [ ] Everything else from the Catalogue session below is unchanged:
+  - Opružni lim description
+  - longer descriptions
+  - the Lajsna alt text and photo size on the site
+  - the unused `…veca.webp`
+  - the brief's screenshots
+  - the checks after deploying
+
+---
+
 ## Catalogue session — 2026-11-02 (branch `reorganisation`)
 
 Topic: a downloadable PDF product catalogue, generated from the site's data, plus a download link on the site. Nothing was merged or deployed.
 
 ### The catalogue
+
+> **Replaced on 2026-11-03** by the 4-page layout: see "Catalogue revision" above. The rest of this section (link, safeguards, how to regenerate) still applies.
 
 - **File:** `public/katalog.pdf`, A4, 7 pages, 0.37 MB (shown as "0,4 MB"). Edition "novembar 2026".
 - **Link** (works once deployed): https://www.boki-edi.com/katalog.pdf. It opens in the browser and saves as "Boki-Edi katalog.pdf". The address stays the same when the catalogue is regenerated, so links in e-mails keep working.

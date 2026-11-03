@@ -15,12 +15,18 @@ import sharp from "sharp";
 // (of 640) of background around each part.
 // Photos not listed get a full-width 4:3 window from the middle; check the result and add an entry if
 // the part is cut off or too small.
+//
+// The PDF catalogue frames tighter: after rotate/extend it finds the part on the gray background and
+// crops so the part fills about 80 % of the box (frameForCatalog). Per photo, `catalog` can change that:
+//   catalog: { fill: 0.75 }                   another share of the box for the part
+//   catalog: { zoom, centerX, centerY }       a fixed window instead (same meaning as above)
+//   catalog: false                            the same window as the site's card (no part to find)
 export const FRAMING = {
   "Brzovez.webp": { rotate: -90 },
   // Close-up of the strip mounted on a calendar: not rotated (the calendar print would be sideways);
   // the strip runs diagonally and is cut by the frame on purpose.
-  "Lajsna za kalendare.webp": { centerY: 0.5 },
-  "Lajsna za kalendare veca.webp": {}, // wider shot of the mounted strip; not used yet
+  "Lajsna za kalendare.webp": { centerY: 0.5, catalog: false },
+  "Lajsna za kalendare veca.webp": { catalog: false }, // wider shot of the mounted strip; not used yet
   // The strip alone on gray: product photo in the PDF catalogue (scripts/make-catalog.mjs)
   "Lajsna za kalendare do 1m duzine.webp": { rotate: 90, extend: 60 }, // the strip runs almost edge to edge
   "Setajuca mehanika.webp": { rotate: 90, zoom: 1.05, centerY: 0.53 }, // keeps most of an edge shadow out
@@ -43,13 +49,9 @@ function window43(width, height, zoom = 1) {
   return { w, h: Math.round((w * 3) / 4) };
 }
 
-// Frames the photo at `input` (file name `file`, the key in FRAMING) as a 4:3 window at full
-// resolution. Returns a sharp pipeline (resize and encode it) and the window size in pixels.
-export async function frame43(input, file) {
-  const framing = FRAMING[file] ?? {};
+// Pass 1: rotate and extend the photo (the 4:3 crop applies to the result)
+async function prepare(input, framing) {
   const { width, height } = await sharp(input).metadata();
-
-  // Pass 1: rotate and extend (the crop in pass 2 applies to the result)
   let source = sharp(input);
   let srcW = width;
   let srcH = height;
@@ -64,11 +66,79 @@ export async function frame43(input, file) {
     srcW += 2 * x;
     srcH += 2 * y;
   }
-  const prepared = await source.png().toBuffer();
+  return { buffer: await source.png().toBuffer(), srcW, srcH };
+}
 
-  // Pass 2: crop the 4:3 window
-  const { w, h } = window43(srcW, srcH, framing.zoom ?? 1);
-  const left = clamp(Math.round((framing.centerX ?? 0.5) * srcW - w / 2), 0, srcW - w);
-  const top = clamp(Math.round((framing.centerY ?? 0.5) * srcH - h / 2), 0, srcH - h);
-  return { image: sharp(prepared).extract({ left, top, width: w, height: h }), width: w, height: h };
+// Pass 2: the 4:3 window given by zoom and center
+function fixedWindow(srcW, srcH, { zoom, centerX, centerY }) {
+  const { w, h } = window43(srcW, srcH, zoom ?? 1);
+  const left = clamp(Math.round((centerX ?? 0.5) * srcW - w / 2), 0, srcW - w);
+  const top = clamp(Math.round((centerY ?? 0.5) * srcH - h / 2), 0, srcH - h);
+  return { left, top, width: w, height: h };
+}
+
+// Frames the photo at `input` (file name `file`, the key in FRAMING) as a 4:3 window at full
+// resolution, like the site's card. Returns a sharp pipeline (resize and encode it) and the window size.
+export async function frame43(input, file) {
+  const framing = FRAMING[file] ?? {};
+  const { buffer, srcW, srcH } = await prepare(input, framing);
+  const window = fixedWindow(srcW, srcH, framing);
+  return { image: sharp(buffer).extract(window), width: window.width, height: window.height };
+}
+
+// Bounding box of the part, in pixels of the prepared photo, or null if none is found. Works on a
+// small copy: fine detail (the part's edges and highlights) stands out against a blurred copy, while
+// the background's slow shading and soft out-of-focus shadows do not.
+async function findPart(buffer, srcW, srcH) {
+  const width = 400;
+  const scale = srcW / width;
+  const height = Math.round(srcH / scale);
+  const gray = await sharp(buffer).resize(width, height, { fit: "fill" }).greyscale().raw().toBuffer();
+  const blurred = await sharp(gray, { raw: { width, height, channels: 1 } }).blur(10).extractChannel(0).raw().toBuffer();
+  const margin = 3; // the blur is less reliable right at the border
+  const columns = new Uint16Array(width);
+  const rows = new Uint16Array(height);
+  for (let y = margin; y < height - margin; y++) {
+    for (let x = margin; x < width - margin; x++) {
+      if (Math.abs(gray[y * width + x] - blurred[y * width + x]) > 20) {
+        columns[x]++;
+        rows[y]++;
+      }
+    }
+  }
+  // A column or row belongs to the part if at least 2 of its pixels differ (ignores single specks)
+  const first = (counts) => counts.findIndex((count) => count >= 2);
+  const last = (counts) => counts.findLastIndex((count) => count >= 2);
+  const [x0, x1, y0, y1] = [first(columns), last(columns), first(rows), last(rows)];
+  if (x0 < 0 || y0 < 0) return null;
+  return { left: x0 * scale, top: y0 * scale, width: (x1 - x0 + 1) * scale, height: (y1 - y0 + 1) * scale };
+}
+
+// Frames the photo for the PDF catalogue: like frame43, but the part fills about 80 % of the box
+// (see `catalog` in FRAMING). Returns the pipeline, the window size and the share the part fills.
+export async function frameForCatalog(input, file) {
+  const framing = FRAMING[file] ?? {};
+  const catalog = framing.catalog ?? {};
+  const { buffer, srcW, srcH } = await prepare(input, framing);
+
+  let window;
+  let part = null;
+  if (catalog === false) {
+    window = fixedWindow(srcW, srcH, framing);
+  } else if (catalog.zoom) {
+    window = fixedWindow(srcW, srcH, catalog);
+  } else {
+    part = await findPart(buffer, srcW, srcH);
+    if (!part) throw new Error(`${file}: no part found on the background; add catalog: { zoom, centerX, centerY } in FRAMING`);
+    const fill = catalog.fill ?? 0.8;
+    // Smallest 4:3 window with the part at `fill` of its width or height, within the photo
+    let w = Math.max(part.width / fill, ((part.height / fill) * 4) / 3);
+    w = Math.min(w, srcW, (srcH * 4) / 3);
+    const h = (w * 3) / 4;
+    const left = clamp(part.left + part.width / 2 - w / 2, 0, srcW - w);
+    const top = clamp(part.top + part.height / 2 - h / 2, 0, srcH - h);
+    window = { left: Math.round(left), top: Math.round(top), width: Math.floor(w), height: Math.floor(h) };
+  }
+  const filled = part ? Math.max(part.width / window.width, part.height / window.height) : null;
+  return { image: sharp(buffer).extract(window), width: window.width, height: window.height, filled };
 }

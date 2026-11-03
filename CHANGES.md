@@ -5,6 +5,34 @@ Newest session first.
 
 ---
 
+## Lajsna photo change — 2026-11-03 (branch `reorganisation`)
+
+The catalogue's Lajsna card and the calendar flyer's first photo now show the strip mounted on a calendar (`Lajsna za kalendare veca.webp`) instead of the strip alone on gray. It shows better how the product looks in use. The website is unchanged. Nothing was merged or deployed.
+
+| What changed | Commit |
+|--------------|--------|
+| <ul><li>`catalogPhoto` of Lajsna in `src/data/products.js` and the flyer's first photo in `src/data/flyers.js` → `…veca.webp`</li><li>its catalogue/flyer crop in `FRAMING` (`scripts/lib/framing.mjs`): `catalog: { zoom: 1, centerY: 0.4 }`</li></ul> | `69e3f79` |
+| <ul><li>Catalogue regenerated: only page 2 changes; 0.38 MB, so the site's label now reads "PDF, 0,4 MB"</li><li>Flyer regenerated: PDF 0.18 MB, JPG 167 KB</li></ul> | `c4ffd9c` |
+
+**Decisions:**
+
+- **The photo is used as photographed,** not turned: it shows the product, not the calendar's print.
+- **The crop sits a little above the middle,** so the strip runs through the frame and the calendar's large red "2027" stays out. A lower crop let the year dominate the small catalogue card.
+- **Alt texts unchanged** (your decision): the hanging hole is on the strip's other side, and the text describes the product.
+- **`Lajsna za kalendare do 1m duzine.webp` (the strip alone) is no longer used.** It's kept (15 KB) in case you want it back: put its name back in `catalogPhoto` in `products.js` and in `flyers.js`, then run `npm run catalog` and `npm run flyer`.
+
+**Checked:**
+
+- Both documents viewed.
+- Catalogue 4 pages, flyer 1 page; only Noto Sans in both.
+- Lajsna photo at 499 ppi.
+- QR codes decode to `/#kalendari` (flyer PDF and JPG) and `/#kontakt` (catalogue).
+- `npm run build` is silent, and the site label reads "PDF, 0,4 MB".
+
+**Note:** on the flyer, both photos now show the mounted strip (wide shot and close-up), so they look alike. For more variety later, change the second photo in `src/data/flyers.js`.
+
+---
+
 ## Flyer session — 2026-11-03 (branch `reorganisation`)
 
 Topic: a one-page PDF flyer for printing houses about calendar strips, built from a reusable flyer config. The website is unchanged, and so is the catalogue's content. Nothing was merged or deployed. The merge-and-deploy checklist is at the end of this section.
@@ -21,7 +49,7 @@ Topic: a one-page PDF flyer for printing houses about calendar strips, built fro
 From top to bottom:
 
 1. **Band:** BOKI-EDI, "Lajsne za zidne kalendare", and "Izrada po meri i montiranje na vaše kalendare." with "Dobanovci, od 2007." on its own line.
-2. **Two photos,** 87 × 58 mm each (the catalogue's cards are 40 mm): the strip on gray, and the close-up of a mounted strip.
+2. **Two photos,** 87 × 58 mm each (the catalogue's cards are 40 mm): the strip mounted on a calendar (wide shot; until the photo change above, the strip alone on gray), and the close-up of a mounted strip.
 3. **The 4 points:**
    - Lajsne izrađujemo po meri, prema formatu vašeg kalendara
    - Male i velike serije
@@ -118,13 +146,12 @@ If the texts don't fit on one page, the script stops with "does not fit" or "2 p
   - `/#kalendari` opens the old home page
   - `/letak-kalendari.pdf` and `/katalog.pdf` give a 404
 - [ ] **Messaging apps:** links in the JPG aren't clickable, and a phone can't scan a QR code shown on its own screen. Put the link in the message next to the image: https://www.boki-edi.com/letak-kalendari.pdf.
-- [ ] **Strip photo (optional):** the photo of the strip alone on gray is a small, soft original (1435 × 1920, 15 KB). It's fine at flyer size, but a new photo would sharpen both the flyer and the catalogue.
+- [x] **Strip photo (optional):** the photo of the strip alone on gray was a small, soft original. → No longer used: the catalogue and flyer show the mounted strip (Lajsna photo change, above).
 - [ ] **Folder-maker flyer:** not made; it needs only a config entry (see above).
 - [ ] **Earlier open items are unchanged:**
   - Opružni lim description
   - longer product descriptions
-  - the Lajsna alt text and photo size on the site
-  - the unused `…veca.webp`
+  - the Lajsna photo size on the site
   - the brief's screenshots
   - the Standardna iglica reshoot
 
@@ -160,7 +187,7 @@ If the texts don't fit on one page, the script stops with "does not fit" or "2 p
 7. **Catalogue:**
    - `curl -I https://www.boki-edi.com/katalog.pdf` → `200`, `content-type: application/pdf`, `content-disposition: inline; filename="Boki-Edi katalog.pdf"`
    - open the link in a browser, then save it: the file name should be "Boki-Edi katalog.pdf"
-   - on the site, click "Preuzmite katalog (PDF, 0,3 MB)" in Proizvodi and in Kontakt: both download "Boki-Edi katalog.pdf"
+   - on the site, click "Preuzmite katalog (PDF, 0,4 MB)" in Proizvodi and in Kontakt: both download "Boki-Edi katalog.pdf"
    - scan the QR code on page 4 with a phone: it opens the contact section
 8. **Flyer:**
    - `curl -I https://www.boki-edi.com/letak-kalendari.pdf` → `200`, `content-type: application/pdf`, `content-disposition: inline; filename="Boki-Edi lajsne za kalendare.pdf"`
@@ -371,9 +398,9 @@ Notes:
 - [ ] **Longer descriptions** for the other 6 products (optional; for now they have their one sentence).
 - [ ] **Standardna iglica photo:** after the reshoot, replace the file, then run `npm run thumbnails` and `npm run catalog`.
 - [ ] **Lajsna on the site:**
-  - The alt text still describes the strip alone ("…sa otvorom za kačenje"), while the site now shows the mounted strip. Suggestion: "Metalna lajsna montirana na zidni kalendar". The catalogue's strip photo would then need its own alt text (a small change).
+  - The alt text still describes the strip alone ("…sa otvorom za kačenje"), while the site now shows the mounted strip. → Left as is (your decision, 2026-11-03): the hanging hole is on the strip's other side, and the text describes the product.
   - The new photo is 3024×4032 / 362 KB. The photo viewer loads it whole; the other originals are 1435×1920 and under 75 KB. Scaling it down to 1435×1920 would cut it to about 100 KB.
-- [ ] **`Lajsna za kalendare veca.webp` is unused** but still deployed: every photo in `src/assets/` is bundled, so 517 KB plus its card image go out with the site, though no page loads them. Delete it (and its card image) if you don't need it.
+- [x] **`Lajsna za kalendare veca.webp` was unused** → now the catalogue's and the flyer's Lajsna photo (2026-11-03). It is still deployed with the site, like every photo in `src/assets/`. Original note: it was unused but still deployed: every photo in `src/assets/` is bundled, so 517 KB plus its card image go out with the site, though no page loads them. Delete it (and its card image) if you don't need it.
 - [ ] **Design brief and screenshots** (`docs/`) still show the page before the Lajsna rename and the links. Page height is now 1997 px at 1366 wide (brief: 2008) and 3414 px at 390 (brief: 3282). Retake with `npm run build`, then `npm run screenshots`, when convenient.
 - [ ] **After deploying:**
   - open https://www.boki-edi.com/katalog.pdf

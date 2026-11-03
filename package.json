@@ -12,7 +12,8 @@
     "preview": "node scripts/preview.mjs",
     "thumbnails": "node scripts/make-thumbnails.mjs",
     "screenshots": "node scripts/screenshots.mjs",
-    "catalog": "node scripts/make-catalog.mjs"
+    "catalog": "node scripts/make-catalog.mjs",
+    "flyer": "node scripts/make-flyer.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

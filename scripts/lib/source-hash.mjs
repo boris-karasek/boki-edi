@@ -1,6 +1,7 @@
 // Fingerprints of everything a printed document is made from: the data files, the product photos, the
-// script, its styles and fonts. `npm run catalog` stores the catalogue's in src/data/catalog.json;
-// `npm run build` compares it and warns when public/katalog.pdf may be out of date.
+// script, its styles and fonts. `npm run catalog` stores the catalogue's in src/data/catalog.json,
+// `npm run flyer` the flyers' in marketing/flyers.json; `npm run build` compares them and warns when
+// public/katalog.pdf or a flyer may be out of date.
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -24,6 +25,8 @@ export const CATALOG_SOURCES = [
   "scripts/make-catalog.mjs",
   "scripts/catalog/",
 ];
+
+export const FLYER_SOURCES = [...SHARED_SOURCES, "src/data/flyers.js", "scripts/make-flyer.mjs", "scripts/flyer/"];
 
 const TEXT_FILES = /\.(js|mjs|jsx|css|json|txt|html|md)$/;
 // Files that macOS and Windows add to folders by themselves (not in git)

@@ -53,6 +53,7 @@ const DOWNLOAD_NAME = "Boki-Edi katalog.pdf"; // also in vercel.json (Content-Di
 const MAX_BYTES = 2 * 1024 * 1024;
 const COLUMNS = 4; // cards per row; also in catalog.css (.row)
 const PHOTO_SIZE = { width: 800, height: 600 }; // about 500 dpi in the 4 cm photo box, for zooming in
+const SERVICE_PHOTO_SIZE = { width: 1600, height: 1200 }; // shown larger and cropped in the service band
 const PREVIEW_DPI = 100;
 
 // Catalogue-only texts (Serbian, Latin script). Everything else comes from the data files.
@@ -113,8 +114,7 @@ function photoFile(product) {
 
 // Crops each photo for the catalogue (the part fills about 80 % of the box, scripts/lib/framing.mjs)
 // and saves it as JPEG: Chrome embeds JPEG files in the PDF as they are, which keeps the PDF small.
-async function preparePhotos(files, dir) {
-  const photos = new Map();
+async function preparePhotos(files, dir, size, photos = new Map()) {
   for (const file of new Set(files)) {
     const input = path.join(assetsDir, file);
     await fs.access(input).catch(() => {
@@ -125,7 +125,7 @@ async function preparePhotos(files, dir) {
     });
     const output = path.join(dir, file.replace(/\.\w+$/, ".jpg"));
     const info = await image
-      .resize(PHOTO_SIZE.width, PHOTO_SIZE.height, { withoutEnlargement: true })
+      .resize(size.width, size.height, { withoutEnlargement: true })
       .jpeg({ quality: 82, mozjpeg: true })
       .toFile(output);
     photos.set(file, { url: pathToFileURL(output).href, width: info.width, size: info.size, filled });
@@ -500,11 +500,11 @@ async function main() {
 
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "boki-edi-catalog-"));
   try {
-    const photoFiles = groups
-      .flatMap(({ rows }) => rows.flat())
-      .map((cell) => (cell.service ? cell.service.photo : photoFile(cell.product)))
-      .filter(Boolean);
-    const photos = await preparePhotos(photoFiles, tempDir);
+    const cells = groups.flatMap(({ rows }) => rows.flat());
+    const cardPhotos = cells.filter((cell) => cell.product).map((cell) => photoFile(cell.product)).filter(Boolean);
+    const servicePhotos = cells.filter((cell) => cell.service).map((cell) => cell.service.photo);
+    const photos = await preparePhotos(cardPhotos, tempDir, PHOTO_SIZE);
+    await preparePhotos(servicePhotos, tempDir, SERVICE_PHOTO_SIZE, photos);
 
     const { html, missing } = buildHtml(data, photos, groups, edition);
     if (missing.length && !draft) {

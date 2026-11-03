@@ -42,6 +42,15 @@ ol {
   list-style: none;
 }
 
+/* The PDF bookmarks are made from the headings' lines: with normal wrapping Chrome drops the space at a
+   line break ("Šetajućamehanika"); pre-wrap keeps it (it hangs invisibly at the line end). Keep heading
+   text on one line in the HTML template. */
+h1,
+h2,
+h3 {
+  white-space: pre-wrap;
+}
+
 /* --- Page frame ------------------------------------------------------------------------------ */
 
 .page {

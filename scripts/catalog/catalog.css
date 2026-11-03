@@ -1,0 +1,220 @@
+/* Styles of the PDF catalogue (scripts/make-catalog.mjs), on top of the shared scripts/lib/print-base.css
+   (page frame, footer, title bar, dark band, photo box, callout, contact card, palette variables). */
+
+/* Everything above the footer; the script checks that nothing overflows it */
+.page-content {
+  flex: 1;
+  min-height: 0;
+  padding: 15mm 15mm 6mm;
+  overflow: hidden;
+}
+
+/* --- Page 1: cover and about ----------------------------------------------------------------- */
+
+.cover-page .band {
+  height: 128mm;
+}
+
+/* Intro and benefits share the space below the band, centered vertically */
+.about {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10mm 15mm 14mm;
+}
+
+.intro-text {
+  font-size: 14.5pt;
+  line-height: 1.6;
+  color: var(--stone-700);
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9mm 11mm;
+  margin-top: 12mm;
+  padding: 12mm 11mm;
+  border-radius: 4mm;
+  background-color: var(--steel);
+}
+
+.benefits li {
+  display: flex;
+  gap: 3mm;
+}
+
+.benefits svg {
+  flex: none;
+  width: 7.5mm;
+  height: 7.5mm;
+  color: var(--teal-600);
+}
+
+.benefit-title {
+  font-size: 13.5pt;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.benefits p + p {
+  margin-top: 1mm;
+  font-size: 12pt;
+  line-height: 1.4;
+  color: var(--stone-600);
+}
+
+/* --- Product pages: groups flow over as many pages as needed --------------------------------- */
+
+/* One unit = one row of cards; the first unit of a group also holds the group heading */
+.unit {
+  margin-top: 7mm;
+}
+
+.unit.group-start {
+  margin-top: 18mm;
+}
+
+.page-content > .unit:first-child {
+  margin-top: 0;
+}
+
+.group-title {
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.group-start .bar {
+  margin-bottom: 7mm;
+}
+
+/* 4 columns of cards (COLUMNS in make-catalog.mjs): photo on top, name, full description */
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 6mm;
+}
+
+.card h3 {
+  margin-top: 3.5mm;
+  font-size: 13pt;
+  line-height: 1.25;
+}
+
+.card p {
+  margin-top: 1.5mm;
+  font-size: 11pt;
+  line-height: 1.42;
+  color: var(--stone-700);
+}
+
+/* Service block (e.g. mounting strips on calendars): dark teal band across the free columns of the
+   group's last row, as tall as the row; photo on the left */
+.service {
+  display: grid;
+  grid-template-columns: 42% 1fr;
+  border-radius: 2.5mm;
+  overflow: hidden;
+  background-image: linear-gradient(to left, var(--teal-900), var(--teal-800), var(--stone-900)); /* like the site's benefits */
+}
+
+.service-photo {
+  display: block;
+  min-height: 34mm;
+  background-color: var(--photo-gray);
+}
+
+.service-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.service-text {
+  align-self: center;
+  padding: 5mm 6mm;
+}
+
+.service-label {
+  font-size: 8.5pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal-300);
+}
+
+.service h3 {
+  margin-top: 1mm;
+  font-size: 13pt;
+  line-height: 1.25;
+  color: var(--stone-50);
+}
+
+.service-text p:last-child {
+  margin-top: 1.5mm;
+  font-size: 11pt;
+  line-height: 1.4;
+  color: var(--stone-300);
+}
+
+/* --- Last page: how to order and contact ----------------------------------------------------- */
+
+.contact-page .page-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-title {
+  font-size: 22pt;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 7mm;
+  margin-top: 9mm;
+}
+
+.steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 5mm;
+  font-size: 14pt;
+  line-height: 1.5;
+  color: var(--stone-700);
+}
+
+/* Centers the first line of each step on its number */
+.steps p {
+  padding-top: 1.3mm;
+}
+
+.steps .step-number {
+  flex: none;
+  width: 10mm;
+  height: 10mm;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #ffffff;
+  background-image: linear-gradient(135deg, var(--teal-500), var(--cyan-900)); /* like the site's main button */
+}
+
+.price-note {
+  margin-top: 11mm;
+}
+
+.contact-section {
+  margin-top: 20mm;
+}
+
+.contact-section .bar {
+  margin-bottom: 7mm;
+}

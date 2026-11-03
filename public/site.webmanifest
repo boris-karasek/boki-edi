@@ -1,0 +1,13 @@
+{
+  "name": "Boki-Edi",
+  "short_name": "Boki-Edi",
+  "lang": "sr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e2e8f0",
+  "theme_color": "#1c1917",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

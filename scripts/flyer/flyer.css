@@ -1,0 +1,168 @@
+/* Styles of the one-page flyers (scripts/make-flyer.mjs), on top of the shared scripts/lib/print-base.css
+   (page frame, footer, title bar, dark band, photo box, callout, contact card, palette variables).
+   Sized so the smallest text is still readable on a phone showing the whole page. */
+
+/* A shorter band than the catalogue cover */
+.flyer-page .band {
+  height: 70mm;
+  padding-top: 13mm;
+}
+
+.flyer-page .band-title {
+  margin-top: 7mm;
+  font-size: 34pt;
+}
+
+.flyer-page .band .bar {
+  margin-top: 5mm;
+}
+
+/* One sentence per line ("Dobanovci, od 2007." on its own line, like on the catalogue cover) */
+.flyer-page .band-lead {
+  max-width: none;
+  margin-top: 5mm;
+  font-size: 14pt;
+}
+
+.flyer-page .band-lead span {
+  display: block;
+}
+
+/* Everything between band and footer; spread evenly so there is no large empty area. The script
+   checks that nothing overflows it. */
+.flyer-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 7mm 15mm 3mm;
+}
+
+.flyer-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+}
+
+/* A little wider than the 4:3 framing: trims some gray above and below the part, leaves more air on
+   the page */
+.flyer-photos .photo {
+  aspect-ratio: 3 / 2;
+}
+
+/* Short points with check marks, one per line */
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5mm;
+}
+
+.points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+}
+
+.points svg {
+  flex: none;
+  width: 7mm;
+  height: 7mm;
+  color: var(--teal-600);
+}
+
+.points p {
+  padding-top: 0.4mm;
+  font-size: 13.5pt;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.flyer-callout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6mm;
+  font-size: 13.5pt;
+}
+
+.flyer-callout .price {
+  flex: none;
+  font-size: 12pt;
+  color: var(--stone-700);
+}
+
+/* Contact card: the phone number largest, then e-mail and website; QR code on the right */
+.flyer-page .contact-panel {
+  padding: 4mm;
+}
+
+.flyer-page .contact-card {
+  grid-template-columns: 1fr 54mm;
+  gap: 6mm;
+  padding: 5mm 8mm;
+}
+
+.flyer-phone {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-top: 1mm;
+  font-size: 24pt;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--stone-900);
+}
+
+.flyer-phone svg {
+  flex: none;
+  width: 9mm;
+  height: 9mm;
+  color: var(--cyan-500);
+}
+
+.flyer-page .contact-list {
+  margin-top: 5mm;
+  gap: 3mm;
+}
+
+.flyer-page .contact-list svg {
+  width: 6.5mm;
+  height: 6.5mm;
+}
+
+.flyer-page .contact-value {
+  font-size: 13pt;
+}
+
+.flyer-page .qr svg {
+  width: 32mm;
+  height: 32mm;
+}
+
+.flyer-page .qr p {
+  font-size: 9pt;
+  text-wrap: balance;
+}
+
+.flyer-page .qr-url {
+  white-space: nowrap;
+}
+
+.flyer-page .page-footer {
+  height: 10mm;
+  margin-bottom: 4mm;
+}
+
+/* Other products and the link to the full catalogue */
+.more {
+  font-size: 11pt;
+  line-height: 1.45;
+  color: var(--stone-700);
+}
+
+.more a {
+  font-weight: 700;
+  color: var(--cyan-700);
+}

@@ -1,78 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
+import { MdBuild } from "react-icons/md";
 
-export default function Product({ name, src}) {
-    const [fullscreenImage, setFullscreenImage] = useState(null);
-    const [fullscreenName, setFullscreenName] = useState(null);
+// Intrinsic size of the card images (see scripts/make-thumbnails.mjs) and of the original photos;
+// lets the browser reserve space before they load.
+const THUMB_WIDTH = 640;
+const THUMB_HEIGHT = 480;
+const PHOTO_WIDTH = 1435;
+const PHOTO_HEIGHT = 1920;
 
-    function openFullscreen(image, text) {
-        setFullscreenImage(image);
-        setFullscreenName(text);
-        window.history.pushState({ fullscreen: true }, ""); // Add a history state
+export default function Product({ product }) {
+  const { name, description, image, thumbnail, alt, isService } = product;
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  function openFullscreen() {
+    setIsFullscreen(true);
+    window.history.pushState({ fullscreen: true }, ""); // Lets the Back button close the photo
+  }
+
+  function closeFullscreen() {
+    setIsFullscreen(false);
+    if (window.history.state?.fullscreen) {
+      window.history.back(); // Remove the history entry added when opening
     }
+  }
 
-    function closeFullscreen() {
-        setFullscreenImage(null);
-        setFullscreenName(null);
-        if (window.history.state?.fullscreen) {
-            window.history.back(); // Navigate back in history
-        }
-    }
+  useEffect(() => {
+    if (!isFullscreen) return;
 
-    useEffect(() => {
-        const handlePopState = () => {
-            // Close fullscreen if history state indicates fullscreen
-            if (fullscreenImage) {
-                closeFullscreen();
-            }
-        };
+    const handlePopState = () => setIsFullscreen(false);
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeFullscreen();
+    };
 
-        window.addEventListener('popstate', handlePopState);
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, [fullscreenImage]);
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isFullscreen]);
 
-    return (
-        <div className="group relative border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ease-in-out duration-300">
-            {/* Product Image */}
-            <div
-                className="relative w-full h-52 cursor-pointer flex justify-center items-center group-hover:scale-105 group-hover:shadow-xl transition-all ease-in-out duration-300"
-                onClick={() => openFullscreen(src, name)}
-            >
-                <img
-                    className="w-full h-full object-cover rounded-lg transform group-hover:scale-105 transition-all duration-300"
-                    src={src}
-                    alt={name}
-                />
-            </div>
-
-            {/* Product Name */}
-            <div className="absolute bottom-0 left-0 right-0 p-1 bg-black bg-opacity-80 text-white text-center text-base font-medium rounded-b-lg">
-                {name}
-            </div>
-
-            {/* Fullscreen Modal */}
-            {fullscreenImage &&
-                createPortal(
-                    <div
-                        className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50"
-                        onClick={closeFullscreen}
-                    >
-                        <div className="relative w-full max-w-5xl max-h-[90%] flex justify-center items-center">
-                            {/* Set max-width and max-height for different screen sizes */}
-                            <img
-                                className="max-w-[90%] max-h-[80%] sm:max-w-[75%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%] object-contain rounded-lg"
-                                src={fullscreenImage}
-                                alt={fullscreenName}
-                            />
-                            <p className="absolute bottom-10 text-center text-white text-xl sm:text-2xl font-semibold bg-black bg-opacity-50 p-2 rounded-lg">
-                                {fullscreenName}
-                            </p>
-                        </div>
-                    </div>,
-                    document.getElementById('modal')
-                )}
+  return (
+    // "product-card" / "product-card-image": hover zoom and lift, see "Product card hover" in src/index.css
+    <article className="product-card flex flex-col h-full bg-stone-900 border-2 border-stone-800 rounded-xl overflow-hidden shadow-lg">
+      {/* Product Image (click to enlarge). Fixed 4:3 box; the 4:3 card image fills it, object-contain
+          shows the whole part. The viewer below opens the original photo. */}
+      {image ? (
+        <button
+          type="button"
+          className="relative block w-full aspect-[4/3] overflow-hidden bg-[#c4c4c4] cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-cyan-400"
+          onClick={openFullscreen}
+          aria-label={`Uvećaj fotografiju: ${name}`}
+        >
+          <img
+            className={`product-card-image absolute inset-0 w-full h-full object-contain ${thumbnail ? "" : "p-2"}`}
+            src={thumbnail ?? image}
+            alt={alt}
+            width={thumbnail ? THUMB_WIDTH : PHOTO_WIDTH}
+            height={thumbnail ? THUMB_HEIGHT : PHOTO_HEIGHT}
+            loading="lazy"
+            decoding="async"
+          />
+        </button>
+      ) : (
+        <div className="w-full aspect-[4/3] flex items-center justify-center bg-gradient-to-br from-teal-800 to-stone-900">
+          <MdBuild className="text-5xl text-teal-300" aria-hidden="true" />
+          {isService && <span className="sr-only">Usluga</span>}
         </div>
-    );
+      )}
+
+      {/* Product Name, description and inquiry button */}
+      <div className="flex flex-col flex-grow px-3 pt-2 pb-3 text-white">
+        <h4 className="text-sm font-semibold leading-snug">{name}</h4>
+        {/* Clamped to 2 lines; the full text is in the HTML and in the photo viewer */}
+        {description && (
+          <p className="mt-0.5 text-xs sm:text-sm text-stone-300 leading-snug line-clamp-2">{description}</p>
+        )}
+        <div className="mt-auto pt-2">
+          <Link
+            to={`/?proizvod=${encodeURIComponent(name)}#kontakt`}
+            aria-label={`Pošaljite upit za: ${name}`}
+            className="inline-block px-3 py-1 text-xs font-medium rounded-md bg-cyan-700 text-white hover:bg-stone-300 hover:text-black transition-colors"
+          >
+            Pošaljite upit
+          </Link>
+        </div>
+      </div>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50 cursor-zoom-out"
+            onClick={closeFullscreen}
+            role="dialog"
+            aria-modal="true"
+            aria-label={name}
+          >
+            <div className="relative w-full max-w-5xl max-h-[90%] flex justify-center items-center">
+              {/* Set max-width and max-height for different screen sizes */}
+              <img
+                className="max-w-[90%] max-h-[80vh] sm:max-w-[75%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[60%] object-contain rounded-lg"
+                src={image}
+                alt={alt}
+              />
+              <div className="absolute bottom-10 max-w-[90%] text-center bg-black bg-opacity-60 px-4 py-2 rounded-lg">
+                <p className="text-white text-xl sm:text-2xl font-semibold">{name}</p>
+                {description && <p className="mt-1 text-stone-200 text-sm sm:text-base">{description}</p>}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="absolute top-4 right-4 px-3 py-1 text-3xl text-white rounded-md hover:bg-stone-700"
+              onClick={(event) => {
+                event.stopPropagation(); // The backdrop click handler would close (and go back) a second time
+                closeFullscreen();
+              }}
+              aria-label="Zatvori"
+            >
+              ✕
+            </button>
+          </div>,
+          document.getElementById("modal")
+        )}
+    </article>
+  );
 }

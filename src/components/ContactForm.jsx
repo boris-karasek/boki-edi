@@ -1,15 +1,36 @@
-import React, { useState } from "react";
-import emailjs from "emailjs-com";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import emailjs from "@emailjs/browser";
+
+import { company } from "../data/company.js";
+
+// EmailJS template variables: name, email, subject, message.
+const EMAILJS_SERVICE_ID = "service_jj89tlg";
+const EMAILJS_TEMPLATE_ID = "template_263y4a8";
+
+const emptyForm = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
+const inputClasses =
+  "w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-cyan-400";
 
 export default function ContactForm() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [formData, setFormData] = useState(emptyForm);
+  const [status, setStatus] = useState(null); // null | { type: "sending" | "success" | "error", text }
+  const [searchParams] = useSearchParams();
+  const product = searchParams.get("proizvod");
 
-  const [status, setStatus] = useState("");
+  // "Pošaljite upit" on a product links to /?proizvod=<name>#kontakt; prefill the subject.
+  // Done in an effect (after hydration) because the pre-rendered page has no query string.
+  useEffect(() => {
+    if (product) {
+      setFormData((data) => ({ ...data, subject: `Upit: ${product}` }));
+    }
+  }, [product]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,87 +40,100 @@ export default function ContactForm() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setStatus({ type: "sending", text: "Slanje poruke..." });
 
-    const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-
-    emailjs
-      .send("service_jj89tlg", "template_263y4a8", formData, PUBLIC_KEY)
-      .then((response) => {
-        console.log("SUCCESS!", response.status, response.text);
-        setStatus("Poruka uspešno poslata!");
-      })
-      .catch((err) => {
-        console.error("FAILED...", err);
-        setStatus("Neuspelo slanje poruke. Molim Vas pokušajte ponovo.");
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, formData, {
+        publicKey: import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY,
       });
+      setStatus({ type: "success", text: "Poruka je uspešno poslata. Hvala!" });
+      setFormData(emptyForm);
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      // Keep the typed message so the visitor can try again
+      setStatus({
+        type: "error",
+        text: `Slanje nije uspelo. Pokušajte ponovo ili nas pozovite na ${company.phoneDisplay}.`,
+      });
+    }
+  };
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
-    setTimeout(() => {
-      setStatus("");
-    }, 10000);
+  const statusClasses = {
+    sending: "text-gray-600",
+    success: "text-green-700",
+    error: "text-red-700",
   };
 
   return (
     <div className="w-full max-w-lg p-6 bg-white shadow-lg rounded-xl border border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-700 text-center mb-4">
-        Kontaktirajte nas!
-      </h2>
+      <h3 className="text-2xl font-bold text-gray-700 text-center mb-4">Pošaljite upit</h3>
       <form className="space-y-4" onSubmit={handleSubmit}>
+        <label htmlFor="contact-name" className="sr-only">
+          Ime i prezime
+        </label>
         <input
+          id="contact-name"
           type="text"
           name="name"
+          autoComplete="name"
           value={formData.name}
           onChange={handleChange}
-          placeholder="Vaše Ime"
+          placeholder="Vaše ime"
           required
-          className="w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-cyan-400"
+          className={inputClasses}
         />
+        <label htmlFor="contact-email" className="sr-only">
+          E-mail adresa
+        </label>
         <input
+          id="contact-email"
           type="email"
           name="email"
+          autoComplete="email"
           value={formData.email}
           onChange={handleChange}
-          placeholder="Vaš Email"
+          placeholder="Vaš e-mail"
           required
-          className="w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-cyan-400"
+          className={inputClasses}
         />
+        <label htmlFor="contact-subject" className="sr-only">
+          Tema poruke
+        </label>
         <input
+          id="contact-subject"
           type="text"
           name="subject"
           value={formData.subject}
           onChange={handleChange}
-          placeholder="Tema poruke (Subject)"
+          placeholder="Tema poruke"
           required
-          className="w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-cyan-400"
+          className={inputClasses}
         />
+        <label htmlFor="contact-message" className="sr-only">
+          Poruka
+        </label>
         <textarea
+          id="contact-message"
           name="message"
           value={formData.message}
           onChange={handleChange}
           placeholder="Vaša poruka"
           rows="5"
           required
-          className="w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-cyan-400"
+          className={inputClasses}
         />
         <button
           type="submit"
-          className="w-full py-2 text-white bg-cyan-500 rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring focus:ring-cyan-300"
+          disabled={status?.type === "sending"}
+          className="w-full py-2 text-white bg-cyan-500 rounded-lg hover:bg-cyan-600 focus:outline-none focus:ring focus:ring-cyan-300 disabled:opacity-60 disabled:cursor-wait"
         >
           Pošalji
         </button>
-        {status && (
-          <p className="text-center text-green-600 mt-2 font-medium">
-            {status}
-          </p>
-        )}
+        <p role="status" className={`text-center mt-2 font-medium ${status ? statusClasses[status.type] : ""}`}>
+          {status?.text}
+        </p>
       </form>
     </div>
   );

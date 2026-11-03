@@ -1,42 +1,18 @@
-import { useEffect } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { productsLoader } from './util/productsLoader.js';
+import { Route, Routes } from "react-router-dom";
 
-import Products from './pages/Products.jsx';
-import Home from './pages/Home.jsx';
-import Contact from './pages/Contact.jsx';
-import ErrorPage from './pages/Error.jsx';
+import RootLayout from "./pages/RootLayout.jsx";
+import Home from "./pages/Home.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
-import favicon from './assets/favicon.ico';
-import RootLayout from './pages/RootLayout.jsx';
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <RootLayout />,
-    errorElement: <ErrorPage/>,
-    loader: productsLoader,
-    id: "root",
-    children: [
-      { index: true, element: <Home /> },
-      { path: "/products", element: <Products /> },
-      { path: "/contact", element: <Contact /> },
-    ],
-  },
-]);
-
-
-function App() {
-  
-  // Add favicon 
-  useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "icon";
-    link.href = favicon;
-    document.head.appendChild(link);
-  }, []);
-
-  return <RouterProvider router={router}></RouterProvider>;
+// The site is a single page (sections in src/sections/); any other URL shows the 404 page.
+// The old /products and /contact URLs are redirected in vercel.json.
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<RootLayout />}>
+        <Route index element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  );
 }
-
-export default App;

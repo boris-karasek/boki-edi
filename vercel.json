@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/products", "destination": "/#proizvodi", "permanent": true },
+    { "source": "/contact", "destination": "/#kontakt", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/letak-kalendari.pdf",
+      "headers": [{ "key": "Content-Disposition", "value": "inline; filename=\"Boki-Edi lajsne za kalendare.pdf\"" }]
+    },
+    {
+      "source": "/katalog.pdf",
+      "headers": [{ "key": "Content-Disposition", "value": "inline; filename=\"Boki-Edi katalog.pdf\"" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}

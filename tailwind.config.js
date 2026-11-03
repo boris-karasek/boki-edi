@@ -1,20 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/App.jsx",
-    "./src/index.css",
-    "./src/components/NavBar.jsx",
-    "./src/pages/Products.jsx",
-    "./src/pages/Home.jsx",
-    "./src/pages/Contact.jsx",
-    "./src/pages/RootLayout.jsx",
-    "./src/pages/Error.jsx",
-    "./src/components/Product.jsx",
-    "./src/components/ContactInfo.jsx",
-    "./src/components/ContactForm.jsx",
-    "./src/components/Footer.jsx"
-  ],
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
       animation: {

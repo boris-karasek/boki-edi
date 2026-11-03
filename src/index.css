@@ -8,17 +8,115 @@
 }
 
 html, body {
- height: 100;
- margin: 0;
+  margin: 0;
 }
 
+/* Smooth scrolling for the in-page menu links, unless the visitor prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Page background: light "brushed steel". Three layers, top to bottom:
+   - fine horizontal streaks: SVG noise stretched sideways, a 600×300 seamless tile (it also hides
+     gradient banding)
+   - a soft light from the top left
+   - a gray-blue gradient that settles within the first 1400 px, so the top of the page looks the
+     same on every screen and doesn't shift when products are added
+   Text sits directly on it in the hero and the section titles, with contrast of 7:1 or better
+   (docs/design-brief.md, section 8). */
 .background-div {
-  background-image: url('./assets/background_page.webp');
-  background-size: cover; /* Ensures the image covers the container */
-  background-repeat: no-repeat; /* Prevents repeating the image */
-  background-position: center; /* Centers the image */
+  background-color: #e3e8ed;
+  background-image:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='300'><filter id='b' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.003 .7' numOctaves='3' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .14  0 0 0 0 .18  0 0 -1.4 0 .72'/></filter><rect width='100%' height='100%' filter='url(%23b)' opacity='.13'/></svg>"),
+    radial-gradient(ellipse 70% 650px at 25% 0, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, #f1f4f7 0, #e8ecf0 700px, #e3e8ed 1400px);
+  background-repeat: repeat, no-repeat, no-repeat;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   width: 100%;
+}
+
+/* Product tabs (src/sections/Products.jsx). Only with JavaScript (the "js" class on <html>, set by a
+   script in index.html before the first paint). Without it, the tab row is hidden and all groups are
+   listed one below the other with their titles.
+   With JavaScript, all groups sit in the same grid cell, so the panel area is always as tall as the
+   tallest group at the current width: switching tabs never moves the content below. Inactive groups
+   stay in the HTML but are invisible, cannot be focused and are not read out (visibility: hidden). */
+.product-tabs {
+  display: none;
+}
+.product-panel + .product-panel {
+  margin-top: 1.25rem;
+}
+.js .product-tabs {
+  display: block;
+}
+.js .product-panels {
+  display: grid;
+}
+.js .product-panel {
+  grid-area: 1 / 1;
+  margin-top: 0;
+  transition: opacity 250ms ease-out, visibility 0s;
+}
+.js .product-panel[data-active="false"] {
+  opacity: 0;
+  visibility: hidden;
+  /* fade out first, then hide (crossfade with the incoming group) */
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.js .product-panel-title {
+  @apply sr-only; /* the tab already shows the group name */
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .product-panel,
+  .js .product-panel[data-active="false"] {
+    transition: none;
+  }
+}
+
+/* Scroll reveal (src/hooks/useRevealOnScroll.js): fade in + 20 px upward move, 500 ms, once.
+   Only opacity and transform change, so nothing else on the page moves. The hidden state exists only
+   after the app has started ("reveal-ready") and never with reduced motion; it has no transition, so
+   hiding happens instantly off screen and only the reveal animates. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-ready [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  .reveal-ready [data-reveal][data-revealed] {
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+/* Product card hover (src/components/Product.jsx): the photo zooms slightly inside its 4:3 box and
+   the card lifts a little. At rest nothing is zoomed, so the whole part is visible; the card images
+   keep ~20 px of background around each part for the 1.05 zoom (scripts/make-thumbnails.mjs).
+   Only on devices that can hover (no "stuck" zoom after a tap on phones); keyboard focus inside a
+   card gets the same highlight; nothing moves with reduced motion. */
+.product-card,
+.product-card-image {
+  transition: transform 250ms ease-out, box-shadow 250ms ease-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .product-card:has(:focus-visible) {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 30px -8px rgb(0 0 0 / 0.45);
+  }
+  .product-card:has(:focus-visible) .product-card-image {
+    transform: scale(1.05);
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 30px -8px rgb(0 0 0 / 0.45);
+  }
+  .product-card:hover .product-card-image {
+    transform: scale(1.05);
+  }
 }

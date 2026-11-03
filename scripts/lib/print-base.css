@@ -1,0 +1,294 @@
+/* Styles shared by the printed documents: the PDF catalogue (scripts/catalog/catalog.css) and the flyers
+   (scripts/flyer/flyer.css). A4 pages of fixed size; colors from the site's palette
+   (docs/design-brief.md, section 1). The fonts (Noto Sans, scripts/lib/fonts/) are declared as
+   "Print Sans" by scripts/lib/print.mjs. Sizes here are the catalogue's; a document can change them. */
+
+:root {
+  /* The site's Tailwind colors */
+  --stone-50: #fafaf9;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-900: #1c1917;
+  --teal-300: #5eead4;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-800: #115e59;
+  --teal-900: #134e4a;
+  --cyan-500: #06b6d4;
+  --cyan-700: #0e7490;
+  --cyan-900: #164e63;
+  --gray-200: #e5e7eb;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --red-100: #fee2e2;
+  --red-700: #b91c1c;
+  /* The site's light steel-gray page background, and the gray box behind product photos */
+  --steel: #f1f4f7;
+  --photo-gray: #c4c4c4;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Gradients cover exactly their box: otherwise Chrome's PDF shows a thin line along the right edge of
+   boxes with rounded corners. Use background-image (not the background shorthand) so this applies. */
+* {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+body {
+  font-family: "Print Sans", sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  color: var(--stone-900);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* The PDF bookmarks are made from the headings' lines: with normal wrapping Chrome drops the space at a
+   line break ("Šetajućamehanika"); pre-wrap keeps it (it hangs invisibly at the line end). Keep heading
+   text on one line in the HTML templates. */
+h1,
+h2,
+h3 {
+  white-space: pre-wrap;
+}
+
+/* --- Page frame ------------------------------------------------------------------------------ */
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+}
+
+.page:last-child {
+  break-after: auto;
+}
+
+.page-footer {
+  flex: none;
+  height: 12mm;
+  margin: 0 15mm 5mm;
+  border-top: 0.3mm solid var(--stone-300);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6mm;
+  font-size: 8.5pt;
+  color: var(--stone-600);
+}
+
+.page-footer .draft {
+  font-weight: 700;
+  color: var(--red-700);
+}
+
+/* Short bar under titles, like the underline of the site's headline */
+.bar {
+  width: 24mm;
+  height: 1.5mm;
+  margin-top: 2.5mm;
+  border-radius: 1mm;
+  background-image: linear-gradient(to right, var(--teal-400), var(--cyan-900));
+}
+
+/* Missing information: clearly marked; a final document is not built while any is left */
+.placeholder {
+  font-weight: 700;
+  color: var(--red-700);
+  background-color: var(--red-100);
+}
+
+/* --- Dark band at the top of a cover or flyer (like the site's link preview image) ------------ */
+
+.band {
+  flex: none;
+  padding: 22mm 15mm 0;
+  color: var(--stone-50);
+  background-image: linear-gradient(120deg, var(--stone-900) 20%, var(--teal-800) 75%, var(--teal-900) 100%);
+}
+
+.band-brand {
+  font-size: 14pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.band-title {
+  margin-top: 15mm;
+  font-size: 40pt;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.band .bar {
+  width: 40mm;
+  height: 2mm;
+  margin-top: 6mm;
+  background-image: linear-gradient(to right, var(--teal-400), var(--cyan-700));
+}
+
+.band-lead {
+  max-width: 150mm;
+  margin-top: 9mm;
+  font-size: 15pt;
+  line-height: 1.5;
+  color: var(--stone-200);
+}
+
+.band-since {
+  margin-top: 7mm;
+  font-size: 13pt;
+  font-weight: 700;
+  color: var(--teal-300);
+}
+
+.band-site {
+  margin-top: 1mm;
+  font-size: 12pt;
+  color: var(--stone-300);
+}
+
+/* --- Product photo in a 4:3 gray box, like the product cards on the site ---------------------- */
+
+.photo {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: 2.5mm;
+  overflow: hidden;
+  background-color: var(--photo-gray);
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* the images are already 4:3 */
+}
+
+/* Product without a photo: icon on teal, like the site */
+.photo.no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13mm;
+  color: var(--teal-300);
+  background-image: linear-gradient(135deg, var(--teal-800), var(--stone-900));
+}
+
+/* --- Highlighted line (e.g. "Cene i uslovi na upit.") ----------------------------------------- */
+
+.callout {
+  padding: 4.5mm 5mm;
+  border-left: 1.2mm solid var(--teal-500);
+  border-radius: 0 2mm 2mm 0;
+  background-color: var(--steel);
+  font-size: 14pt;
+  font-weight: 700;
+  color: var(--teal-900);
+}
+
+/* --- Contact card with QR code, like the site's contact panel --------------------------------- */
+
+/* Teal fading to the page color, with a white card on it */
+.contact-panel {
+  padding: 6mm;
+  border-radius: 5mm;
+  background-image: linear-gradient(to right, var(--teal-700), var(--teal-500) 60%, #ffffff);
+}
+
+.contact-card {
+  display: grid;
+  grid-template-columns: 1fr 56mm;
+  gap: 8mm;
+  align-items: center;
+  padding: 11mm 9mm;
+  border: 0.3mm solid var(--gray-200);
+  border-radius: 4mm;
+  background-color: #ffffff;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7mm;
+}
+
+.contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+}
+
+.contact-list svg {
+  flex: none;
+  width: 8mm;
+  height: 8mm;
+  color: var(--cyan-500); /* like the site's contact icons */
+}
+
+.contact-label {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.contact-value {
+  font-size: 15pt;
+  color: var(--gray-800);
+}
+
+.qr {
+  text-align: center;
+}
+
+.qr svg {
+  display: block;
+  width: 54mm;
+  height: 54mm;
+  margin: 0 auto;
+}
+
+.qr p {
+  margin-top: 2mm;
+  font-size: 10pt;
+  line-height: 1.35;
+  color: var(--stone-700);
+}
+
+.qr .qr-url {
+  font-weight: 700;
+  color: var(--cyan-700);
+}

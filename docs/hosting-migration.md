@@ -6,24 +6,36 @@ Goal: move the hosting to Netlify's Free plan with no change visible to visitors
 
 ## Read this first
 
-1. **The domain expires on 2026-12-17.** That's soon, whatever else happens. Make sure it renews before you start ([step 0](#0-before-touching-netlify)).
-2. **DNS is hosted on Vercel, so the switch doesn't involve the registrar.** You add two records in Vercel's DNS panel, and undoing it means deleting them.
+1. **The domain expires on 2026-12-17.** Renew it at Loopia before anything else ([step 0](#0-before-touching-netlify)).
+2. **DNS is hosted on Vercel, so the switch doesn't involve Loopia.** You add two records in Vercel's DNS panel, and undoing it means deleting them. Moving DNS to Loopia is a separate phase, at least a week later ([step 7](#7-move-dns-from-vercel-to-loopia-separate-phase)).
 3. **New Netlify projects are private by default.** On Free, only you can see a private project; everyone else gets a "no access" page. It has to be made public before the domain moves, but only after a correct production deploy.
 4. **Netlify may show visitors a "Powered by Netlify" badge.** Free projects created since 19 August 2026 start with it on. Turn it off, or the site visibly changes.
 5. **The bare domain will answer 301, not 308,** and HTTP → HTTPS likewise. Netlify has no setting for either. See [the reasons](#the-bare-domain-cant-return-308).
 6. **`/products` and `/contact` will answer 301 instead of today's 308,** through plain rules in `netlify.toml`. Google treats the two the same. The Deploy Preview has to confirm one thing: that Netlify's CDN keeps the `#proizvodi` part of the redirect ([details](#why-plain-301-rules)).
 
-In the steps below, `<site>` is your project's name, as in `<site>.netlify.app`. The Netlify paths are from Netlify's docs on 2026-11-06; labels may differ slightly on screen.
+In the steps below, `<site>` is your project's name, as in `<site>.netlify.app`. The Netlify and Loopia paths are from their docs on 2026-11-06; labels may differ slightly on screen, and Loopia's guides are general ones, not specific to your account.
 
 ## Checklist
 
 ### 0. Before touching Netlify
 
+- [ ] **Renew the domain at Loopia.** `boki-edi.com` expires on **2026-12-17**, and you renew it yourself: in the Loopia customer zone, open the domain, then **Renewals**.
+  - Renewing early shouldn't shorten the term, because a renewal normally adds to the current expiry date. Loopia's docs don't state this, so **confirm it with Loopia.**
+  - **Auto-renew** is an option, so the domain can't lapse over a missed reminder. Loopia mentions it, but I couldn't find where it's set, so look in the customer zone or ask.
+  - Renewals are paid from LoopiaPREPAID. A card top-up registers at once, but a bank transfer can take a few banking days, so leave some margin.
+- [ ] **Check the nameservers at Loopia.** In the customer zone, open the domain and click **Name servers**. They should be `ns1.vercel-dns.com` and `ns2.vercel-dns.com`, as the public data shows. If they're anything else, stop: steps 5 and 7 assume DNS is on Vercel.
 - [ ] **Review the branch** `netlify-migration`. It isn't pushed.
-- [ ] **Domain renewal.** Find where you pay for `boki-edi.com` and confirm it renews before 2026-12-17. The public data names Ascio, which is a wholesaler, so look for last year's invoice from a reseller. If you bought it through Vercel, it's under Vercel's **Domains**.
 - [ ] **Back up the DNS records.** In Vercel: **Domains** > `boki-edi.com`. Take a screenshot of all records and compare them with [DNS today](#dns-today). A wildcard hides any subdomain I didn't know to ask about, so your list is the complete one.
 - [ ] **Real traffic.** On the Vercel project's **Usage** page, note the last 30 days' data transfer and requests. Compare them with the [estimate](#monthly-estimate).
-- [ ] **Search Console ownership.** Open **Settings > Ownership verification** and note the method. I found no Google record in DNS, and no tag or file in the site. If yours depends on something that's gone, add a new method now. A DNS `TXT` record is the simplest, since it survives a hosting move.
+- [ ] **Search Console.** Open [Search Console](https://search.google.com/search-console) and see whether `boki-edi.com` is listed.
+  - **If it is:** open **Settings > Ownership verification** and note the method. I found no Google record in public DNS and no tag or file on the site, so check it doesn't rely on something that's gone. If it does, add the `TXT` record below.
+  - **If it isn't, add a Domain property:**
+    1. In the property menu: **Add property > Domain**. Enter `boki-edi.com`, without `www` or `https`. It covers `www`, the bare domain, HTTP and HTTPS.
+    2. Copy the `google-site-verification=…` value it shows.
+    3. In Vercel's DNS panel (**Domains** > `boki-edi.com`), add a record: name empty, type `TXT`, the value you copied, TTL 60.
+    4. Check that it's published with `dig +short TXT boki-edi.com @ns1.vercel-dns.com`, then press **Verify**. Google says a new record can take up to two or three days to be seen, so if it fails at first, try again later.
+    5. **Keep the record.** Google keeps rechecking it, and removing it loses the verification. It moves to Loopia with the others in step 7.
+    6. Submit `https://www.boki-edi.com/sitemap.xml` under **Sitemaps**. Doing all this before the switch lets you compare before and after.
 - [ ] **Protect the contact form:** go through [EmailJS protection](#emailjs-protection) below.
 
 #### EmailJS protection
@@ -82,13 +94,19 @@ The account and project already exist, so don't create new ones. **Leave builds 
 - [ ] **GitHub access:** at GitHub **Settings > Applications > Netlify > Configure**, make sure `boki-edi` is in the repository access list.
 - [ ] **Fork pull requests.** The repository is public, so anyone can open a pull request from a fork, and that can trigger a Deploy Preview that runs their code on your project. At **Project configuration > Environment variables > Site policies**, set the sensitive variable policy to **Require approval**. Netlify applies this by itself only when it detects sensitive variables, and yours isn't marked secret. Your own pull requests aren't held back, as long as your GitHub account is connected to your Netlify user.
 - [ ] **Deploy logs.** The default for a public repository is **Public logs**: anyone with a deploy's address can read them. Choose **Private logs**, alongside the build settings. The build prints nothing secret, but nobody else needs them.
-- [ ] **Don't press "Make public" yet.** The only production deploy so far is the broken one: a copy of the repository instead of the site.
+- [ ] **Don't press "Make public" yet.** The only production deploy so far is the broken one: a copy of the repository instead of the site. Step 4 deletes it first.
 
-### 2. Turn builds back on
+### 2. Turn builds back on, before opening the pull request
 
 - [ ] On the project's **Deploys** page, press **Activate builds**. Or: **Project configuration > Developer settings > Continuous deployment > Build settings > Configure > Build status > Active builds**.
 
-This doesn't start a build and costs nothing. From now on, a push to `main` costs 15 credits. Pushes made while builds were stopped aren't picked up afterwards, so do this before step 3.
+Builds are stopped, and while they are, a pull request gets no Deploy Preview. Netlify doesn't go back for pushes made in the meantime, so do this before step 3.
+
+| Action | Credits |
+|---|---|
+| Activating builds (it doesn't start a build) | 0 |
+| The pull request's Deploy Preview, and each push to the branch | 0 |
+| **Merging to `main` in step 4: one production deploy** | **15** |
 
 ### 3. Test for free on a Deploy Preview
 
@@ -141,7 +159,7 @@ This doesn't start a build and costs nothing. From now on, a push to `main` cost
 
 ### 5. Move the domain
 
-Choose a quiet time, such as an evening, and allow an hour. **Nothing changes at the registrar.**
+Choose a quiet time, such as an evening, and allow an hour. **Nothing changes at Loopia.**
 
 **E-mail:** there's nothing to protect. The domain has no MX records, so no mail arrives at `@boki-edi.com`. The form and `bokiedi@gmail.com` don't use this domain's DNS. If your record backup from step 0 shows MX or TXT records after all, leave them alone: this step doesn't touch them.
 
@@ -211,9 +229,91 @@ Choose a quiet time, such as an evening, and allow an hour. **Nothing changes at
   4. Over the next two weeks, watch **Pages** for new errors, and check that ownership is still verified.
 - [ ] **Credits:** look at **Usage & billing** after a day or two.
 
-### 7. When it's safe to remove Vercel
+### 7. Move DNS from Vercel to Loopia (separate phase)
 
-Wait **at least two weeks**, until all of these are true:
+**When:** at least a week after step 5, once step 6's checks still pass, and not alongside any other change. The site doesn't need this to run. It removes the dependency on Vercel's DNS, so Vercel can go completely in step 8.
+
+Two things to know first:
+
+- **Loopia's nameservers already answer for this domain, with Loopia's own addresses** (`194.9.94.85` and `194.9.94.86` on 2026-11-06), not Netlify's. Changing nameservers now would send the site there, and Loopia's check wouldn't stop you: it only tests that its servers answer. **Records first, nameservers last.**
+- **A nameserver change is slow to undo.** The `.com` registry publishes nameservers with a 48-hour TTL (172800 seconds, measured), and nobody can lower that. For up to two days, some visitors use Vercel's DNS and some Loopia's, so both must give the same answers.
+
+**a. List every current record**
+
+- [ ] Vercel's panel is the complete list: `dig` only answers for names you ask about, and the wildcard makes made-up names answer too. Take a screenshot of the panel, then save what DNS actually answers:
+
+  ```bash
+  for name in boki-edi.com www.boki-edi.com _dmarc.boki-edi.com; do
+    for type in A AAAA CNAME MX TXT CAA NS; do
+      dig +noall +answer "$type" "$name" @ns1.vercel-dns.com
+    done
+  done | tee ~/boki-edi-dns-before.txt
+  ```
+
+  Add any other name the panel shows, such as a subdomain or a DKIM `<selector>._domainkey`. The Search Console `TXT` record from step 0 should be in the output. An `A` answer on `_dmarc` is only the wildcard, so ignore it.
+
+**b. Recreate the records at Loopia**
+
+- [ ] In the Loopia customer zone, open the domain, then **DNS editor**. Use TTL **300** on each record, so a mistake clears quickly. To change a record's type, Loopia requires deleting the old record first.
+
+  | On Vercel today | At Loopia |
+  |---|---|
+  | `www` → Netlify | `www`, `CNAME`, `<site>.netlify.app`. **Copy the value from Netlify's Domain management screen.** |
+  | Bare domain → Netlify (`ALIAS`) | `@`, `A`, `75.2.60.5`. **Copy the value from Netlify's screen.** Loopia's docs only describe `A` and `CNAME`, and `CNAME` only for subdomains. |
+  | Search Console `TXT` | `@`, `TXT`, the same value |
+  | Any MX, SPF, DKIM, DMARC or subdomain in your list | Same name, type and value |
+  | `CAA` | Optional. With none, any certificate authority may issue. If you add it, include `0 issue "letsencrypt.org"`, which Netlify's certificate needs. |
+  | Vercel's built-in records, including the wildcard | **Don't copy them:** they point at Vercel. |
+  | Loopia's own `@` and `www` at `194.9.94.x`, and any `*` | **Delete them.** A leftover `A` record next to the new one would send some visitors to the wrong place. |
+
+**c. Check Loopia's answers before changing anything**
+
+- [ ] Loopia's servers can be asked directly, before they're in use. Repeat with `@ns2.loopia.se`:
+
+  ```bash
+  dig +short www.boki-edi.com @ns1.loopia.se   # <site>.netlify.app, then Netlify's address
+  dig +short boki-edi.com @ns1.loopia.se       # 75.2.60.5, and nothing else
+  dig +short TXT boki-edi.com @ns1.loopia.se   # the Search Console value
+  dig +short MX boki-edi.com @ns1.loopia.se    # as in your list (empty on 2026-11-06)
+  ```
+
+  **Don't continue until this matches your list.** Loopia's docs say DNS editing needs its nameservers to be in use. If your changes don't show up here, ask Loopia how to prepare the records before delegating, and don't go ahead without them.
+
+**d. Lower the TTLs beforehand**
+
+- [ ] **On Vercel, at least a day before:** set your own records to 60. Step 5's two records already are; check the `TXT` and anything else you added. Vercel's built-in records can't be changed, which doesn't matter here.
+- [ ] **At Loopia:** 300, from part b.
+- The registry's 48 hours can't be lowered, as above.
+
+**e. Change the nameservers**
+
+- [ ] In the customer zone, open the domain, click **Name servers**, enter `ns1.loopia.se` and `ns2.loopia.se`, and press **Change name servers**. **Don't tick Force:** if Loopia refuses, find out why first. Its general guide says Loopia has to be the registrar, and the public data names Ascio, so if the button isn't there, ask Loopia.
+- [ ] **Leave everything on Vercel as it is.** Its records are what make this safe to undo.
+
+**f. Verify, over the next 48 hours**
+
+- [ ] Public resolvers show the new nameservers and the same answers:
+
+  ```bash
+  dig +short NS boki-edi.com @8.8.8.8          # ns1.loopia.se, ns2.loopia.se
+  dig +short NS boki-edi.com @1.1.1.1
+  dig +short www.boki-edi.com @8.8.8.8
+  dig +short boki-edi.com @8.8.8.8
+  dig +short TXT boki-edi.com @8.8.8.8
+  ```
+
+- [ ] `npm run check:hosting -- https://www.boki-edi.com`: `Answered by:` says Netlify, and everything passes.
+- [ ] **Netlify, Domain management > HTTPS:** the certificate is still valid.
+- [ ] **Search Console** still shows the property as verified, and **one test message** from the form arrives.
+- [ ] **After a week:** raise the TTLs at Loopia to 3600, its usual value.
+
+**Rollback:** in the customer zone, set **Name servers** back to `ns1.vercel-dns.com` and `ns2.vercel-dns.com`. It can take up to 48 hours, but both DNS services give the same answers, so the site stays up throughout. This only works while Vercel's records are in place, which is why they stay until step 8.
+
+**Alternative: Netlify DNS.** Netlify can host the DNS instead of Loopia: on **Domain management**, next to the domain, choose **Options > Set up Netlify DNS**, copy the records from part a, and at Loopia replace the nameservers with the four Netlify shows. Netlify then manages the site's own records, so you don't depend on a fixed address for the bare domain. The drawback is that hosting and DNS sit in one account, so changing host later means moving DNS as well. Loopia keeps DNS independent of the host, and it's where you already pay for the domain.
+
+### 8. When it's safe to remove Vercel
+
+Wait until **step 7 has been stable for at least a week**, and **at least two weeks after the switch**, and all of these are true:
 
 - `npm run check:hosting -- https://www.boki-edi.com` still passes
 - real form messages have been arriving
@@ -223,36 +323,28 @@ Wait **at least two weeks**, until all of these are true:
 Then, in this order:
 
 - [ ] **Stop Vercel's deploys:** Vercel project **Settings > Git > Disconnect**. This can be undone.
-- [ ] **Wait a few more days,** then **delete the Vercel project. Not the domain.** After this, rollback means rebuilding the project first, so don't rush it.
+- [ ] **Wait a few more days,** then **delete the Vercel project.** After this, rollback means rebuilding the project first, so don't rush it.
 - [ ] Right after, run the check on `www` again and `dig` both names.
+- [ ] **Remove the domain from Vercel's Domains page,** once `dig +short NS boki-edi.com` shows only Loopia. **Never do this while the nameservers point to Vercel:** that removes DNS and takes the site down.
 - [ ] **Clean up the repository** on a branch:
   - delete `vercel.json` and `syncVercelHeader` in `scripts/lib/hosting-headers.mjs`
   - make `scripts/preview.mjs` read the Netlify config or replace it; `scripts/screenshots.mjs` uses it
-  - update the Vercel mentions in `README.md`, `scripts/prerender.mjs`, `src/App.jsx` and `vite.config.js`
+  - update the Vercel mentions in `README.md`, `docs/development.md`, `scripts/prerender.mjs`, `src/App.jsx` and `vite.config.js`
   - update the comment in `scripts/make-catalog.mjs` next time you regenerate the catalogue: that file is fingerprinted, so editing it alone sets off the "out of date" warning
-
-**Never delete `boki-edi.com` from Vercel's Domains page while its nameservers point to Vercel.** That removes DNS and takes the site down.
-
-**Moving DNS off Vercel (optional, later).** DNS can stay on Vercel for free, but it keeps you tied to that account. This is the one step that happens at the registrar:
-
-1. On Netlify: **Domain management**, next to the domain: **Options > Set up Netlify DNS**. Check that every record from your backup is there, and copy any that's missing.
-2. At the place you pay for the domain, replace the two Vercel nameservers with the four Netlify shows.
-3. It can take up to 48 hours. Leave everything on Vercel in place meanwhile. `dig NS boki-edi.com` shows when it's done.
-4. Only then remove the domain from Vercel. If it was bought through Vercel, its docs say it can't be removed until it expires, so transfer it out instead.
-
-Undoing a nameserver change is much slower than undoing the records in step 5, so do it separately and only once everything else is settled.
 
 ### Rollback
 
 | Problem | What to do | Cost |
 |---|---|---|
 | **Domain or certificate trouble,** or Netlify as a whole isn't working | In Vercel's DNS panel, **delete the two records from step 5.** The built-in records take over and traffic returns to Vercel, within a minute or so with the 60-second TTL. | 0 |
+| **The same, after step 7** | At Loopia, set `@` and `www` to the values in the Vercel project's **Settings > Domains**. It needs a TTL's wait, 5 minutes at 300. | 0 |
+| **The DNS move itself** | See the rollback in [step 7](#7-move-dns-from-vercel-to-loopia-separate-phase). | 0 |
 | **A bad deploy on Netlify** | **Deploys** > an earlier deploy > **Publish deploy**. It's instant, and the next merge to `main` replaces it. | 0 |
 | **Credits ran out** and the site is paused | Upgrade to Personal, or use the first row while the Vercel project exists. | $9 a month, or 0 |
 
 To confirm a DNS rollback, run `npm run check:hosting -- https://www.boki-edi.com`: `Answered by:` says Vercel, and the only failures are the bare domain's two 307 lines, as they are today.
 
-This works as long as the Vercel project exists and `vercel.json` is still in `main`, which is why both stay until step 7. Vercel may need a moment to renew its certificate if the site was away from it for a long time.
+This works as long as the Vercel project exists and `vercel.json` is still in `main`, which is why both stay until step 8. Vercel may need a moment to renew its certificate if the site was away from it for a long time.
 
 ## Reference
 
@@ -289,7 +381,7 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 | What | Value |
 |---|---|
 | **Nameservers** | `ns1.vercel-dns.com`, `ns2.vercel-dns.com`: **DNS is hosted on Vercel** |
-| **Registrar** | Ascio Technologies. It's a wholesaler, so you probably pay a reseller; the data doesn't name one. |
+| **Registrar** | You pay Loopia. The public data names Ascio Technologies. |
 | **Domain expires** | **2026-12-17** |
 | **DNSSEC** | Off, so there's nothing to undo |
 | **`boki-edi.com`** | `A` 64.29.17.1, 64.29.17.65 (TTL 1800) |
@@ -393,7 +485,7 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 | Deliberately broken | What the check reported |
 |---|---|
 | Publishing the repository root, like the first deploy | 20 failures, starting with "the repository was published, not dist/" |
-| A redirect rule missing | `/products` gives 404 |
+| A redirect rule missing | That URL fails: "no redirect" |
 | A rule made temporary (302) | `/products` fails: not permanent |
 | A rule's target without `#proizvodi` | `/products` fails: `301 → /` |
 | Built without the EmailJS key | "REACT_APP_EMAILJS_PUBLIC_KEY wasn't set for this build" |

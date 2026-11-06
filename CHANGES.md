@@ -5,6 +5,38 @@ Newest session first.
 
 ---
 
+## Decisions before the push — 2026-11-06 (branch `netlify-migration`)
+
+Topic: your decisions on the open questions from the two sessions below. Nothing is pushed or deployed. The checklist is in [docs/hosting-migration.md](docs/hosting-migration.md).
+
+### Done
+
+| Decision | What changed | Commit |
+|----------|--------------|--------|
+| Plain 301 rules | The edge function is gone. `/products` and `/contact` answer 301 from `netlify.toml`. The check accepts 301 or 308, so it still works against Vercel. | `0b5d7ce` |
+| SEO audit trimmed | The audit's commit was rewritten rather than fixed on top, so the full version isn't on this branch. | `8697bf1` |
+| README for recruiters | New `README.md`. The maintenance notes moved to `docs/development.md`. No license; an Ownership section instead. | `143619a` |
+| Checklist | <ul><li>Step 0 starts with renewing at Loopia and checking the nameservers there</li><li>How to add a Search Console Domain property</li><li>Builds must be active before the pull request</li><li>New step 7: moving DNS from Vercel to Loopia, at least a week after the switch</li><li>Removing Vercel is now step 8</li></ul> | `15aa45e` |
+
+**Checked:**
+
+- **`npm run check:hosting`:** 34 passed, 0 failed, 1 skipped, from a fresh clone. It fails as it should when a rule is missing, temporary or loses its `#fragment`. Against the live Vercel site: 38 passed and 2 failed, both the bare domain's 307.
+- **What a merge changes on the live site:** of the 39 files in the build, 38 are byte-identical to what's live now. The other is `letak-kalendari.pdf`: same size and pixels, new creation date. `vercel.json`, `src/`, `index.html` and the lockfile are unchanged, and `package.json` only gains two scripts.
+- **The trim:** I searched every commit on this branch, including commit messages, and none of the removed text is left.
+
+### Decisions
+
+- **`/index.html` is no longer redirected.** It came with dropping the edge function: see the Netlify migration section below.
+
+### Open questions / next steps
+
+- [ ] **Deploy Preview (step 3):** confirm that Netlify's CDN keeps `#proizvodi` and `#kontakt` in `location`. Netlify's docs don't cover this, and I found no report either way. If it doesn't, the edge function can come back from `b8457f3`.
+- [ ] **Renew the domain at Loopia** before 2026-12-17.
+- [ ] **Old EmailJS key:** you're checking it yourself; it stays in the history.
+- [ ] **GitHub's About box:** still `boki-edi.vercel.app`.
+
+---
+
 ## Public repository and secret scan — 2026-11-06 (branch `netlify-migration`)
 
 Topic: the repository stays public, as part of your portfolio, so the plan to make it private is dropped. Nothing is pushed or deployed, and history wasn't rewritten.
@@ -27,9 +59,9 @@ Topic: the repository stays public, as part of your portfolio, so the plan to ma
 
 ### Open questions / next steps
 
-- [ ] **Old EmailJS key:** `.env` was in the first commit (`d9bb3eb`) and removed the same day (`9ce025a`), so it's still in the public history. It holds an older public key, different from the current one and not on the site. Confirm in the EmailJS dashboard that it's no longer active. I don't recommend rewriting history for this.
+- [ ] **Old EmailJS key:** `.env` was in the first commit (`d9bb3eb`) and removed the same day (`9ce025a`), so it's still in the public history. It holds an older public key, different from the current one and not on the site. You're checking it against the EmailJS dashboard yourself, and it stays in the history (your decision).
 - [ ] **EmailJS:** go through the protection section of the checklist. The domain whitelist needs a paid plan, and CAPTCHA needs a code change first.
-- [ ] **New README for recruiters:** drafted, waiting for your review. The current README's maintenance notes would move to `docs/development.md`.
+- [x] **New README for recruiters** → committed in the session above.
 - [ ] **GitHub's About box:** the website field still says `boki-edi.vercel.app`.
 
 ---
@@ -82,7 +114,7 @@ Topic: moving the hosting from Vercel to Netlify's Free plan with no change visi
 - [ ] **Review the branch,** then follow [the checklist](docs/hosting-migration.md#checklist).
 - [ ] **Search Console ownership:** I found no Google record in DNS and no tag or file in the site. Check which method it relies on (step 0).
 - [ ] **The Vercel 307 → 308 item below is no longer needed** if the move goes ahead.
-- [ ] **After the switch:** remove `vercel.json` and the other Vercel leftovers (step 7).
+- [ ] **After the switch:** remove `vercel.json` and the other Vercel leftovers (step 8).
 - [x] **`docs/seo-audit.md` was uncommitted** → committed in the session above.
 
 ---

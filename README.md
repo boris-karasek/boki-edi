@@ -24,7 +24,7 @@ Environment variables (put them in `.env`, which git ignores; never commit value
 
 | Variable | Used for |
 |---|---|
-| `REACT_APP_EMAILJS_PUBLIC_KEY` | EmailJS public key for the contact form (also set in Vercel) |
+| `REACT_APP_EMAILJS_PUBLIC_KEY` | EmailJS public key for the contact form (also set in Vercel and Netlify) |
 | `CHROME` | optional: path to Chrome for the generator scripts |
 | `PORT` | optional: port for `npm run preview` (default 4173) |
 
@@ -72,6 +72,8 @@ The catalogue and the flyers aren't made on Vercel (no Chrome there), so their f
 
 ## Deploy
 
+**The hosting is moving to Netlify:** see the checklist in [docs/hosting-migration.md](docs/hosting-migration.md). `netlify.toml` holds the same settings for Netlify. This section stays valid until the switch.
+
 Pushing to `main` deploys production on Vercel. Project settings:
 
 - Framework Preset: Vite
@@ -80,7 +82,7 @@ Pushing to `main` deploys production on Vercel. Project settings:
 - Node.js: 20 or newer
 - Environment variable `REACT_APP_EMAILJS_PUBLIC_KEY` set
 
-`vercel.json` holds the redirects (`/products` → `/#proizvodi`, `/contact` → `/#kontakt`, 308), clean URLs and the file-name headers for the PDFs. `npm run flyer` adds the header for a new flyer itself.
+`vercel.json` holds the redirects (`/products` → `/#proizvodi`, `/contact` → `/#kontakt`, 308), clean URLs and the file-name headers for the PDFs. `npm run flyer` adds the header for a new flyer itself, to `netlify.toml` too.
 
 ## Links for customers
 
@@ -98,6 +100,7 @@ An inquiry with the subject filled in: `/?proizvod=<name>#kontakt`, e.g. https:/
 ## More
 
 - [CHANGES.md](CHANGES.md): history of the reorganisation, decisions, open questions and the merge-and-deploy checklist
+- [docs/hosting-migration.md](docs/hosting-migration.md): moving from Vercel to Netlify: checklist, credit budget, rollback
 - [docs/design-brief.md](docs/design-brief.md): colors, fonts, layout and the page background
 
 **Local note:** on the NTFS drive, stop `npm run preview` before `npm run build`, otherwise emptying `dist/` fails.

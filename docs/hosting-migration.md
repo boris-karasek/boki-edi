@@ -2,7 +2,237 @@
 
 Goal: move the hosting to Netlify's Free plan with no change visible to visitors or Google.
 
-## What Vercel does for the site today
+**Status:** prepared and checked locally on 2026-11-06. Nothing is pushed or deployed, and Vercel and DNS are untouched.
+
+## Read this first
+
+1. **The domain expires on 2026-12-17.** That's soon, whatever else happens. Make sure it renews before you start ([step 0](#0-before-touching-netlify)).
+2. **DNS is hosted on Vercel, so the switch doesn't involve the registrar.** You add two records in Vercel's DNS panel, and undoing it means deleting them.
+3. **New Netlify projects are private by default.** On Free, only you can see a private project; everyone else gets a "no access" page. It has to be made public before the domain moves, but only after a correct production deploy.
+4. **Netlify may show visitors a "Powered by Netlify" badge.** Free projects created since 19 August 2026 start with it on. Turn it off, or the site visibly changes.
+5. **The bare domain will answer 301, not 308,** and HTTP → HTTPS likewise. Netlify has no setting for either. See [the reasons](#the-bare-domain-cant-return-308).
+6. **`/products` and `/contact` stay 308 through an edge function,** because redirect rules can't be relied on for 308. The Deploy Preview is what proves this on the real CDN.
+
+In the steps below, `<site>` is your project's name, as in `<site>.netlify.app`. The Netlify paths are from Netlify's docs on 2026-11-06; labels may differ slightly on screen.
+
+## Checklist
+
+### 0. Before touching Netlify
+
+- [ ] **Review the branch** `netlify-migration`. It isn't pushed.
+- [ ] **Domain renewal.** Find where you pay for `boki-edi.com` and confirm it renews before 2026-12-17. The public data names Ascio, which is a wholesaler, so look for last year's invoice from a reseller. If you bought it through Vercel, it's under Vercel's **Domains**.
+- [ ] **Back up the DNS records.** In Vercel: **Domains** > `boki-edi.com`. Take a screenshot of all records and compare them with [DNS today](#dns-today). A wildcard hides any subdomain I didn't know to ask about, so your list is the complete one.
+- [ ] **Real traffic.** On the Vercel project's **Usage** page, note the last 30 days' data transfer and requests. Compare them with the [estimate](#monthly-estimate).
+- [ ] **Search Console ownership.** Open **Settings > Ownership verification** and note the method. I found no Google record in DNS, and no tag or file in the site. If yours depends on something that's gone, add a new method now. A DNS `TXT` record is the simplest, since it survives a hosting move.
+- [ ] **EmailJS domains.** If the EmailJS dashboard's **Domains** section restricts where the form may send from, add your `<site>.netlify.app` address and the preview address, or the form test will fail there and nowhere else.
+
+### 1. Check the existing Netlify project
+
+The account and project already exist, so don't create new ones. **Leave builds stopped during this step.**
+
+**Why the first deploy failed:** the project had no build settings and the repository had no `netlify.toml`, so Netlify published the repository itself. The browser got the source `index.html`, which links to `/src/index.jsx`, a file no browser can run, hence "disallowed MIME type". `netlify.toml` fixes this on any branch that has it. `main` won't have it until the merge, so set the dashboard too.
+
+- [ ] **Name.** Rename the project now if you want to, under **Project configuration > General**. The `www` DNS record will point at this name.
+- [ ] **Build settings:** **Project configuration > Developer settings > Continuous deployment**:
+
+  | Section | Setting | Value |
+  |---|---|---|
+  | Repository | Linked repository | `boris-karasek/boki-edi` |
+  | Build settings > Configure | Base directory | empty |
+  | | Package directory | empty |
+  | | Build command | `npm run build` |
+  | | Publish directory | `dist` |
+  | Branches and deploy contexts > Configure | Production branch | `main` |
+  | | Branch deploys | None |
+  | | Deploy Previews | Any pull request against your production branch |
+
+- [ ] **Node version:** nothing to set. `netlify.toml` sets 24, and it overrides the dashboard.
+- [ ] **Environment variable:** **Project configuration > Environment variables > Add a variable**:
+
+  | Field | Value |
+  |---|---|
+  | Key | `REACT_APP_EMAILJS_PUBLIC_KEY` |
+  | Value | The same as in your local `.env` |
+  | Scopes | Builds is required; all is fine too |
+  | Deploy contexts | All, with the same value, so previews get it too |
+  | **Contains secret values** | **Leave unticked.** The key is public by design and ends up in the page's JavaScript, so secret scanning would fail the build. |
+
+- [ ] **Badge:** **Project configuration > General > Powered by Netlify badge** > off. Netlify is rolling this out gradually, so the setting may not be there yet; look again in step 4.
+- [ ] **Private repository:** at GitHub **Settings > Applications > Netlify > Configure**, make sure `boki-edi` is in the repository access list, so builds continue once the repository is private. A private repository on a personal account is fine on Free; only private *organization* repositories need Pro. You can switch it to private at any time.
+- [ ] **Don't press "Make public" yet.** The only production deploy so far is the broken one, and it contains the whole repository.
+
+### 2. Turn builds back on
+
+- [ ] On the project's **Deploys** page, press **Activate builds**. Or: **Project configuration > Developer settings > Continuous deployment > Build settings > Configure > Build status > Active builds**.
+
+This doesn't start a build and costs nothing. From now on, a push to `main` costs 15 credits. Pushes made while builds were stopped aren't picked up afterwards, so do this before step 3.
+
+### 3. Test for free on a Deploy Preview
+
+- [ ] Push the branch and open a pull request. **Don't merge yet.**
+
+  ```bash
+  git push -u origin netlify-migration
+  ```
+
+  Open the pull request from `netlify-migration` to `main` on GitHub. Vercel builds its own preview of it too; that's harmless. If Netlify doesn't start a build, push an empty commit: `git commit --allow-empty -m "Trigger Deploy Preview" && git push`.
+- [ ] **Read the deploy log.** It should show Node 24, the three pre-render lines, no "may be out of date" warning, and the edge function being packaged. The summary should list 2 redirect rules and 3 header rules.
+- [ ] **Make previews public,** because they're private by default and the check can't log in: **Project configuration > General > Visitor access > Project visibility**, previews only. I'd leave them public: they contain only the built site, Netlify marks them `noindex`, and their canonical link points to `www`. Leave production private for now.
+- [ ] **Run the checks.** Everything must pass; NOTE lines are fine.
+
+  ```bash
+  npm run check:hosting -- https://deploy-preview-<number>--<site>.netlify.app
+  ```
+
+- [ ] **In a private browser window,** do the site checks from the merge-and-deploy checklist in `CHANGES.md`:
+  - the four group links (`/#fascikle`, `/#kalendari`, `/#ramovi`, `/#ostalo`) and a product inquiry
+  - **one real test message** from the form
+  - both PDFs: they open in the browser and save under the right names
+  - a made-up address shows the 404 page
+- [ ] **Credits:** under **Usage & billing**, production deploys haven't gone up.
+
+**If a check fails:**
+
+| Check says | What to do |
+|---|---|
+| `/products` 301, "the edge function didn't answer" | Visitors are still redirected, so it isn't urgent. Look for the edge function in the deploy log. |
+| "the repository was published" | Netlify didn't read `netlify.toml`. Check that the Base directory is empty. |
+| "wasn't set for this build" | The environment variable is missing for this context. Fix it, then push a new commit. |
+| "This address is private" | The visibility setting above. |
+| A PDF has no file name | Check that the deploy summary lists 3 header rules. If it does, this is CDN behaviour I couldn't test locally: send me the output. |
+
+### 4. First production deploy (15 credits)
+
+- [ ] **Merge the pull request.** Netlify makes a production deploy. Vercel redeploys as well, and the live site stays the same: I compared the builds of `main` and this branch, and the only file that differs is `letak-kalendari.pdf`, with the same pixels and a new creation date.
+- [ ] **Delete the broken first deploy before going public.** **Deploys** > select it > **Options > Delete deploy**. Making the project public exposes its production deploys, and that one holds a copy of the whole repository at its own permanent address. It can be deleted now that it's no longer the published one.
+- [ ] **Badge:** check again that it's off.
+- [ ] **Make the project public:** **Project configuration > General > Visitor access > Project visibility**, production: Public.
+- [ ] **Run the checks on the production address.** Here `x-robots-tag` and injected scripts fail instead of being notes.
+
+  ```bash
+  npm run check:hosting -- https://<site>.netlify.app
+  ```
+
+- [ ] **In a private browser window, logged out:** the site loads without a login and without a banner or badge. Repeat the site checks from step 3.
+
+### 5. Move the domain
+
+Choose a quiet time, such as an evening, and allow an hour. **Nothing changes at the registrar.**
+
+**E-mail:** there's nothing to protect. The domain has no MX records, so no mail arrives at `@boki-edi.com`. The form and `bokiedi@gmail.com` don't use this domain's DNS. If your record backup from step 0 shows MX or TXT records after all, leave them alone: this step doesn't touch them.
+
+**On Netlify:**
+
+- [ ] **Domain management > Production domains > Add a domain:** enter `www.boki-edi.com`. Netlify adds `boki-edi.com` by itself. Check that **`www` is marked Primary** and the bare domain redirects to it.
+- [ ] If Netlify offers Netlify DNS, choose **external DNS** for now. Note the exact values it shows. They should match the table below; if they differ, use Netlify's.
+- [ ] From now on `<site>.netlify.app` may redirect to `www`, which is still Vercel. That's normal. To reach Netlify directly until the switch, use the deploy's own address, `https://<deploy-id>--<site>.netlify.app`.
+
+**In Vercel's DNS panel** (**Domains** > `boki-edi.com`):
+
+- [ ] Add these two records:
+
+  | Name | Type | Value | TTL |
+  |---|---|---|---|
+  | `www` | `CNAME` | `<site>.netlify.app` | 60 |
+  | (empty, the bare domain) | `ALIAS` | `apex-loadbalancer.netlify.com` | 60 |
+
+  Vercel's built-in records can't be deleted, but records you add override them. If you can't add the `ALIAS`, use `A` with `75.2.60.5`. If the list already has a record of your own for `www` or the bare domain, delete that first. Change nothing else, and leave the domain attached to the Vercel project; "Invalid Configuration" appearing there is expected.
+- [ ] Check that Vercel's nameserver gives the new answers:
+
+  ```bash
+  dig +short www.boki-edi.com @ns1.vercel-dns.com
+  dig +short boki-edi.com @ns1.vercel-dns.com
+  ```
+
+**HTTPS on Netlify:**
+
+- [ ] **Domain management > HTTPS:** press **Verify DNS configuration** if it's offered, and wait for the certificate. It's free and renews by itself. No CAA change is needed: the current records already allow `letsencrypt.org`.
+
+**Downtime, honestly:**
+
+- Old DNS answers stay cached for up to 30 minutes. Those visitors still reach Vercel, which keeps working, so nothing breaks.
+- **The one real gap:** visitors already sent to Netlify get a certificate error until the certificate is issued, usually within minutes. Vercel's HSTS header means browsers won't let them click past it. This is why you do it at a quiet time and watch.
+- If there's no certificate after about 15 minutes, [roll back](#rollback) and look into it without pressure.
+
+### 6. Checks after the switch
+
+- [ ] **Everything at once.** `Answered by:` must say Netlify, and every line must pass, including the Domain section:
+
+  ```bash
+  npm run check:hosting -- https://www.boki-edi.com
+  ```
+
+- [ ] **By hand with `curl`:**
+
+  ```bash
+  curl -I https://www.boki-edi.com/products             # 308, location: /#proizvodi
+  curl -I https://www.boki-edi.com/contact              # 308, location: /#kontakt
+  curl -I https://boki-edi.com/                         # 301 to https://www.boki-edi.com/
+  curl -I https://www.boki-edi.com/nepostoji            # 404
+  curl -I https://www.boki-edi.com/katalog.pdf          # 200, application/pdf, "Boki-Edi katalog.pdf"
+  curl -I https://www.boki-edi.com/letak-kalendari.pdf  # 200, application/pdf, "Boki-Edi lajsne za kalendare.pdf"
+  curl -I https://<site>.netlify.app/                   # redirect to https://www.boki-edi.com/
+  ```
+
+  **If the bare domain answers 200 instead of redirecting,** the site still works, but contact Netlify support and link the [forum report](https://answers.netlify.com/t/apex-domain-serves-200-instead-of-301-despite-redirects-automatically-to-primary-domain/167399). Google could otherwise index it as a second address.
+- [ ] **Form:** send one real test message and check it arrives.
+- [ ] **Viber or WhatsApp preview:** paste `https://www.boki-edi.com/` into a chat to yourself. It should show the title and `og-image.jpg`. If you see an old preview, it's cached; add `?v=2` once.
+- [ ] **QR codes:** with a phone, scan the flyer's (opens the **Kalendari** tab) and the one on page 4 of the catalogue (opens the contact section).
+- [ ] **PDFs:** on the site, click "Preuzmite katalog" in Proizvodi and in Kontakt; open both PDF links and save them, and check the names. In the flyer, click the phone, e-mail, website and "Ceo katalog" links.
+- [ ] **Look at the site** on a phone and a laptop in a private window, with no badge in the bottom-right corner.
+- [ ] **Search Console:**
+  1. Sitemaps > resubmit `https://www.boki-edi.com/sitemap.xml`
+  2. URL inspection > `https://www.boki-edi.com/` > Test live URL, then Request indexing
+  3. No change-of-address request is needed, because the URLs stay the same.
+  4. Over the next two weeks, watch **Pages** for new errors, and check that ownership is still verified.
+- [ ] **Credits:** look at **Usage & billing** after a day or two.
+
+### 7. When it's safe to remove Vercel
+
+Wait **at least two weeks**, until all of these are true:
+
+- `npm run check:hosting -- https://www.boki-edi.com` still passes
+- real form messages have been arriving
+- Search Console shows no new errors
+- the Vercel project's **Usage** shows next to no traffic
+
+Then, in this order:
+
+- [ ] **Stop Vercel's deploys:** Vercel project **Settings > Git > Disconnect**. This can be undone.
+- [ ] **Wait a few more days,** then **delete the Vercel project. Not the domain.** After this, rollback means rebuilding the project first, so don't rush it.
+- [ ] Right after, run the check on `www` again and `dig` both names.
+- [ ] **Clean up the repository** on a branch:
+  - delete `vercel.json` and `syncVercelHeader` in `scripts/lib/hosting-headers.mjs`
+  - make `scripts/preview.mjs` read the Netlify config or replace it; `scripts/screenshots.mjs` uses it
+  - update the Vercel mentions in `README.md`, `scripts/prerender.mjs`, `src/App.jsx` and `vite.config.js`
+  - update the comment in `scripts/make-catalog.mjs` next time you regenerate the catalogue: that file is fingerprinted, so editing it alone sets off the "out of date" warning
+
+**Never delete `boki-edi.com` from Vercel's Domains page while its nameservers point to Vercel.** That removes DNS and takes the site down.
+
+**Moving DNS off Vercel (optional, later).** DNS can stay on Vercel for free, but it keeps you tied to that account. This is the one step that happens at the registrar:
+
+1. On Netlify: **Domain management**, next to the domain: **Options > Set up Netlify DNS**. Check that every record from your backup is there, and copy any that's missing.
+2. At the place you pay for the domain, replace the two Vercel nameservers with the four Netlify shows.
+3. It can take up to 48 hours. Leave everything on Vercel in place meanwhile. `dig NS boki-edi.com` shows when it's done.
+4. Only then remove the domain from Vercel. If it was bought through Vercel, its docs say it can't be removed until it expires, so transfer it out instead.
+
+Undoing a nameserver change is much slower than undoing the records in step 5, so do it separately and only once everything else is settled.
+
+### Rollback
+
+| Problem | What to do | Cost |
+|---|---|---|
+| **Domain or certificate trouble,** or Netlify as a whole isn't working | In Vercel's DNS panel, **delete the two records from step 5.** The built-in records take over and traffic returns to Vercel, within a minute or so with the 60-second TTL. | 0 |
+| **A bad deploy on Netlify** | **Deploys** > an earlier deploy > **Publish deploy**. It's instant, and the next merge to `main` replaces it. | 0 |
+| **Credits ran out** and the site is paused | Upgrade to Personal, or use the first row while the Vercel project exists. | $9 a month, or 0 |
+
+To confirm a DNS rollback, run `npm run check:hosting -- https://www.boki-edi.com`: `Answered by:` says Vercel, and the only failures are the bare domain's two 307 lines, as they are today.
+
+This works as long as the Vercel project exists and `vercel.json` is still in `main`, which is why both stay until step 7. Vercel may need a moment to renew its certificate if the site was away from it for a long time.
+
+## Reference
+
+### What Vercel does for the site today
 
 From `vercel.json` and `CHANGES.md`, and measured on the live site with `curl` on 2026-11-06. The Vercel dashboard itself wasn't visible to me, so the build settings are as `CHANGES.md` records them.
 
@@ -28,7 +258,7 @@ From `vercel.json` and `CHANGES.md`, and measured on the live site with `curl` o
 
 **Letter case:** `/Products` and `/KATALOG.PDF` give 404 on Vercel.
 
-### DNS today
+#### DNS today
 
 From `dig` and the public registration data (RDAP), 2026-11-06:
 
@@ -45,7 +275,7 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 | **MX** | **None.** No mail can be received at `@boki-edi.com`. |
 | **TXT (SPF, DKIM, DMARC, Google)** | **None** on the names I checked |
 
-## The Netlify config
+### The Netlify config
 
 **Everything is in `netlify.toml`,** not in `public/_redirects` and `public/_headers`:
 
@@ -62,7 +292,7 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 - The flyer was regenerated once to refresh the fingerprint. The page is pixel-identical at 150 dpi, the JPG and page image are byte-identical, and the PDF has the same size with a new creation date.
 - `hosting-headers.mjs` is deliberately left out of the fingerprint, so hosting changes won't mark printed flyers as stale. That includes removing `vercel.json` later.
 
-## How Netlify differs, and what I did about it
+### How Netlify differs, and what I did about it
 
 "CDN" means measured with `curl` on public Netlify sites (netlify.com, smashingmagazine.com, kubernetes.io) on 2026-11-06. "Local" means tested with Netlify's local server. Nothing was deployed, so none of this has run on your own project yet. The Deploy Preview in the checklist is what confirms it.
 
@@ -84,7 +314,7 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 | `content-disposition: inline` on all files | Yes | No | Nothing needed: browsers show these files either way. |
 | `/Products`, `/KATALOG.PDF` | 404 | May work instead: Netlify ignores letter case in paths (CDN) | Left: at worst a mistyped link starts working. |
 
-### Why 308 comes from an edge function
+#### Why 308 comes from an edge function
 
 Netlify's own docs list 301, 302, 404 and 200 as redirect statuses, call 307 "currently unsupported", and never mention 308. The Nitro framework's source says the same and downgrades 307 and 308 for Netlify, and a forum user reported in 2021 that 307/308 rules led to a 404.
 
@@ -95,13 +325,13 @@ Netlify's local server doesn't settle it: it answers any 3xx in a rule, so a 308
 
 **Simpler option, if you ever want it:** Google treats 301 and 308 the same way, as permanent. Deleting the edge function file leaves the plain 301 rules, with no visible change for visitors. I kept 308 because you asked for it.
 
-### The bare domain can't return 308
+#### The bare domain can't return 308
 
 Netlify redirects the bare domain to the primary domain by itself, with a 301, and has no setting for it. The merge-and-deploy checklist in `CHANGES.md` expects 308 there; on Netlify, expect **301**. That's still a real improvement on today's 307, because it tells Google the move is permanent.
 
 One open forum report from August 2026 describes a bare domain answering 200 instead of redirecting, even though the dashboard said it would redirect. So the checks after the switch test this explicitly.
 
-## Checking the config
+### Checking the config
 
 `npm run preview` stays as it is: quick, based on `vercel.json`, and used by `npm run screenshots`. It's my own imitation of a host, so it can't prove anything about Netlify. Two new commands use Netlify's real tools instead:
 
@@ -117,7 +347,7 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 
 **Stop `npm run preview` first:** `netlify serve` rebuilds `dist/`, and the NTFS drive refuses that while files are in use.
 
-### Results on 2026-11-06
+#### Results on 2026-11-06
 
 `npm run check:hosting`: **34 passed, 0 failed, 1 skipped.** The same result came from a fresh clone of this branch.
 
@@ -147,7 +377,7 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 | A flyer's header missing from `netlify.toml` | That PDF fails, with no file name in the response |
 | A private project answering 401 | Stops and points to the visibility setting |
 
-### What only the real deployment can prove
+#### What only the real deployment can prove
 
 The local server isn't Netlify's CDN. These are checked by running the script against the Deploy Preview, then the live site:
 
@@ -157,7 +387,7 @@ The local server isn't Netlify's CDN. These are checked by running the script ag
 - nothing injected into the page (the Powered by Netlify badge)
 - the bare-domain and HTTP redirects, and the certificate (live site only)
 
-## Credit budget
+### Credit budget
 
 **Rates,** confirmed on Netlify's pricing page and credit docs on 2026-11-06:
 
@@ -169,7 +399,7 @@ The local server isn't Netlify's CDN. These are checked by running the script ag
 | Deploy Previews, branch deploys, failed deploys, rolling back to an earlier deploy | 0 |
 | **Free plan limit** | **300 a month.** At zero, the site shows "Site not available" until the next month, and you can't buy more on Free. |
 
-### What one visit costs
+#### What one visit costs
 
 Measured in headless Chrome on the built site: a first-time visitor, all images loading, whole page scrolled, at 1366×768 and 390×844.
 
@@ -184,7 +414,7 @@ Measured in headless Chrome on the built site: a first-time visitor, all images 
 
 The Google map doesn't count: it loads from Google. EmailJS doesn't either. Returning visitors cost less than this, because `/assets/*` stays in their browser's cache, and I didn't subtract that.
 
-### Monthly estimate
+#### Monthly estimate
 
 So one visit costs about 0.013 credits.
 
@@ -198,7 +428,7 @@ With 4 deploys a month, the limit is reached at about **18,000 visits**, or abou
 
 **Check this against real numbers:** the Vercel dashboard's **Usage** page shows the last 30 days' data transfer and requests. Do this before moving, because that history stays behind on Vercel.
 
-### Deploy workflow
+#### Deploy workflow
 
 Target: **at most 4 production deploys a month, in reviewed batches.**
 
@@ -213,7 +443,7 @@ Target: **at most 4 production deploys a month, in reviewed batches.**
 - **Avoid "Retry deploy" and "Clear cache and deploy" when nothing is broken.** Each successful one is a production deploy.
 - **To undo a bad deploy,** use **Publish deploy** on an earlier one. It's instant and costs nothing. A new commit costs 15.
 
-### Only `main` is a production deploy
+#### Only `main` is a production deploy
 
 This is a dashboard setting; `netlify.toml` can't set it. At **Project configuration > Developer settings > Continuous deployment > Branches and deploy contexts > Configure**:
 
@@ -223,7 +453,7 @@ This is a dashboard setting; `netlify.toml` can't set it. At **Project configura
 | Branch deploys | None |
 | Deploy Previews | Any pull request against your production branch |
 
-### Watching the credits
+#### Watching the credits
 
 All under **Usage & billing** in the team's dashboard:
 

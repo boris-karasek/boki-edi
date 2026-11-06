@@ -11,8 +11,8 @@
 //   marketing/letak-kalendari.jpg           the same page as an image for Viber/WhatsApp, 1200 px wide
 //   docs/flyer-preview/letak-kalendari.png  page image for checking
 // and, for all flyers, marketing/flyers.json (sizes, edition and the fingerprint for the "out of date"
-// warning of `npm run build`). If vercel.json has no header for the flyer's PDF yet, the script adds
-// it, so the PDF opens in the browser and is saved as `downloadName`.
+// warning of `npm run build`). If vercel.json or netlify.toml has no header for the flyer's PDF yet, the
+// script adds it, so the PDF opens in the browser and is saved as `downloadName`.
 //
 // A final flyer is not built while a text is missing, if it does not fit on one page, if a font other
 // than the bundled Noto Sans gets in, or if the PDF is over 1 MB or the image over 500 KB.
@@ -26,6 +26,7 @@ import { MdCheckCircle, MdEmail, MdLanguage, MdPhone } from "react-icons/md";
 import sharp from "sharp";
 
 import { frameForCatalog } from "./lib/framing.mjs";
+import { syncHostingHeaders } from "./lib/hosting-headers.mjs";
 import { setPdfInfo } from "./lib/pdf-info.mjs";
 import {
   BuildError,
@@ -148,35 +149,6 @@ function buildHtml(name, flyer, data, photos, edition) {
   return { html, missing };
 }
 
-// --- vercel.json ------------------------------------------------------------------------------
-
-// The PDF opens in the browser and is saved as `downloadName`: vercel.json sends that name in a
-// Content-Disposition header. Adds the header for this flyer if it is missing, or updates the name;
-// other entries stay as they are. Returns "added", "updated" or null.
-async function syncVercelHeader(file, downloadName) {
-  const vercelFile = path.join(rootDir, "vercel.json");
-  let text = await fs.readFile(vercelFile, "utf8");
-  const source = `/${file}.pdf`;
-  const value = `inline; filename="${downloadName}"`;
-  const entry = JSON.parse(text).headers?.find((header) => header.source === source);
-  const current = entry?.headers.find((header) => header.key === "Content-Disposition")?.value;
-  if (current === value) return null;
-
-  if (current !== undefined) {
-    text = text.replace(JSON.stringify(current), JSON.stringify(value));
-  } else {
-    const block =
-      `    {\n      "source": ${JSON.stringify(source)},\n` +
-      `      "headers": [{ "key": "Content-Disposition", "value": ${JSON.stringify(value)} }]\n    },\n`;
-    if (!/"headers": \[\n/.test(text)) throw new BuildError(`vercel.json: no "headers" list to add ${source} to`);
-    text = text.replace(/"headers": \[\n/, (match) => match + block);
-  }
-  const check = JSON.parse(text).headers.find((header) => header.source === source);
-  if (check?.headers[0]?.value !== value) throw new BuildError(`vercel.json: could not set the header for ${source}`);
-  await fs.writeFile(vercelFile, text);
-  return current === undefined ? "added" : "updated";
-}
-
 // --- Main -------------------------------------------------------------------------------------
 
 async function makeFlyer(name, flyer, data, edition, tempDir) {
@@ -256,8 +228,9 @@ async function makeFlyer(name, flyer, data, edition, tempDir) {
   if (fonts === null) console.warn("  ! pdffonts not found (poppler-utils): font check skipped");
 
   if (!draft) {
-    const change = await syncVercelHeader(flyer.file, flyer.downloadName);
-    if (change) console.log(`  vercel.json: header for /${flyer.file}.pdf ${change} ("${flyer.downloadName}") — commit it`);
+    for (const [config, change] of await syncHostingHeaders(rootDir, flyer.file, flyer.downloadName)) {
+      console.log(`  ${config}: header for /${flyer.file}.pdf ${change} ("${flyer.downloadName}") — commit it`);
+    }
   }
   return { pdf: pdfOut, image: imageOut, pdfBytes: pdf.length, imageBytes: jpg.length, edition };
 }

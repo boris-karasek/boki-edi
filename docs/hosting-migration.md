@@ -44,3 +44,20 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 | **CAA** | Allows `letsencrypt.org`, `pki.goog`, `sectigo.com` |
 | **MX** | **None.** No mail can be received at `@boki-edi.com`. |
 | **TXT (SPF, DKIM, DMARC, Google)** | **None** on the names I checked |
+
+## The Netlify config
+
+**Everything is in `netlify.toml`,** not in `public/_redirects` and `public/_headers`:
+
+- The build command, publish folder and Node version have to be in `netlify.toml` anyway, so one file holds everything, as `vercel.json` does now.
+- Everything in `public/` is copied to `dist/`. With `_headers` and `_redirects` there, Vercel would serve those two files on the live site until the switch. With `netlify.toml`, `dist/` doesn't change.
+- The one thing `_headers` would do better is being simpler for a script to edit. The flyer script only has to touch one short block, so that isn't worth a second file.
+
+**Node version:** `NODE_VERSION = "24"`, the version the site is built and tested with here. Node 20, the old minimum, reached end of life in April 2026.
+
+**New flyers still need only a config entry.** `npm run flyer` now adds or updates the flyer's header in both `vercel.json` and `netlify.toml`, and prints what it changed. The code moved from `make-flyer.mjs` to `scripts/lib/hosting-headers.mjs`.
+
+**The build warning still works.** `make-flyer.mjs` is part of the flyers' fingerprint, so editing it makes `npm run build` warn that the flyers may be out of date.
+
+- The flyer was regenerated once to refresh the fingerprint. The page is pixel-identical at 150 dpi, the JPG and page image are byte-identical, and the PDF has the same size with a new creation date.
+- `hosting-headers.mjs` is deliberately left out of the fingerprint, so hosting changes won't mark printed flyers as stale. That includes removing `vercel.json` later.

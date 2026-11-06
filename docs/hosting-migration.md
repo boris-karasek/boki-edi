@@ -24,7 +24,28 @@ In the steps below, `<site>` is your project's name, as in `<site>.netlify.app`.
 - [ ] **Back up the DNS records.** In Vercel: **Domains** > `boki-edi.com`. Take a screenshot of all records and compare them with [DNS today](#dns-today). A wildcard hides any subdomain I didn't know to ask about, so your list is the complete one.
 - [ ] **Real traffic.** On the Vercel project's **Usage** page, note the last 30 days' data transfer and requests. Compare them with the [estimate](#monthly-estimate).
 - [ ] **Search Console ownership.** Open **Settings > Ownership verification** and note the method. I found no Google record in DNS, and no tag or file in the site. If yours depends on something that's gone, add a new method now. A DNS `TXT` record is the simplest, since it survives a hosting move.
-- [ ] **EmailJS domains.** If the EmailJS dashboard's **Domains** section restricts where the form may send from, add your `<site>.netlify.app` address and the preview address, or the form test will fail there and nowhere else.
+- [ ] **Protect the contact form:** go through [EmailJS protection](#emailjs-protection) below.
+
+#### EmailJS protection
+
+The form only uses the EmailJS **public** key, as a browser form must; the private key isn't used anywhere. The public key, service ID and template ID are readable in the page's JavaScript and in this repository, so anyone can send requests through your account. On the Free plan (200 requests a month), requests over the limit are dropped, and that would include real inquiries.
+
+- [ ] **Plan and usage:** check both in the EmailJS dashboard. The plan decides the next item.
+- [ ] **Recipient:** in the template, **To Email** must be a fixed address, not a `{{variable}}`. Otherwise the form could be used to send mail to anyone.
+- [ ] **Domain whitelist.** **Paid plans only** (Personal, $9 a month, and up); it isn't on Free. In the dashboard: **Account > Security**. The format is `scheme://hostname[:port]`:
+
+  | Entry | Why |
+  |---|---|
+  | `https://www.boki-edi.com` | **The form runs here.** Without this entry, the live form stops working. |
+  | `https://boki-edi.com` | The bare domain, as you asked; it only redirects, so it's just a precaution |
+  | `https://<site>.netlify.app` | Testing in step 4 |
+  | `http://localhost:5173` | `npm run dev` |
+  | `http://localhost:4173` | `npm run preview` |
+  | `http://localhost:8888` | `npm run preview:netlify` |
+
+  **Send a test message from the live site right after saving.** EmailJS's docs don't mention wildcards, so a Deploy Preview would need its own entry. The whitelist stops other websites from using your key, but a script that fakes its origin can still get through.
+- [ ] **Rate limiting: nothing to enable.** EmailJS limits requests by IP address by itself; its API docs state 1 request per second. The browser library also has `limitRate` and `blockHeadless` options, but they need a small code change, and they only slow down people using the page, not scripts calling EmailJS directly. Tell me if you want them.
+- [ ] **CAPTCHA: available (reCAPTCHA v2; the docs mention no plan restriction), but don't switch it on yet.** The site sends with `emailjs.send`, which then has to pass a CAPTCHA token. If you tick the box in the template without a code change, **no e-mail can be sent and the form stops working.** It would also add a visible checkbox and Google's script to the page, which is a visible change. I'd hold it until spam is an actual problem. If so: code change first, then the checkbox.
 
 ### 1. Check the existing Netlify project
 
@@ -58,8 +79,10 @@ The account and project already exist, so don't create new ones. **Leave builds 
   | **Contains secret values** | **Leave unticked.** The key is public by design and ends up in the page's JavaScript, so secret scanning would fail the build. |
 
 - [ ] **Badge:** **Project configuration > General > Powered by Netlify badge** > off. Netlify is rolling this out gradually, so the setting may not be there yet; look again in step 4.
-- [ ] **Private repository:** at GitHub **Settings > Applications > Netlify > Configure**, make sure `boki-edi` is in the repository access list, so builds continue once the repository is private. A private repository on a personal account is fine on Free; only private *organization* repositories need Pro. You can switch it to private at any time.
-- [ ] **Don't press "Make public" yet.** The only production deploy so far is the broken one, and it contains the whole repository.
+- [ ] **GitHub access:** at GitHub **Settings > Applications > Netlify > Configure**, make sure `boki-edi` is in the repository access list.
+- [ ] **Fork pull requests.** The repository is public, so anyone can open a pull request from a fork, and that can trigger a Deploy Preview that runs their code on your project. At **Project configuration > Environment variables > Site policies**, set the sensitive variable policy to **Require approval**. Netlify applies this by itself only when it detects sensitive variables, and yours isn't marked secret. Your own pull requests aren't held back, as long as your GitHub account is connected to your Netlify user.
+- [ ] **Deploy logs.** The default for a public repository is **Public logs**: anyone with a deploy's address can read them. Choose **Private logs**, alongside the build settings. The build prints nothing secret, but nobody else needs them.
+- [ ] **Don't press "Make public" yet.** The only production deploy so far is the broken one: a copy of the repository instead of the site.
 
 ### 2. Turn builds back on
 
@@ -86,7 +109,7 @@ This doesn't start a build and costs nothing. From now on, a push to `main` cost
 
 - [ ] **In a private browser window,** do the site checks from the merge-and-deploy checklist in `CHANGES.md`:
   - the four group links (`/#fascikle`, `/#kalendari`, `/#ramovi`, `/#ostalo`) and a product inquiry
-  - **one real test message** from the form
+  - **one real test message** from the form. If the EmailJS whitelist is on, add this preview's address first, or leave this test for step 4.
   - both PDFs: they open in the browser and save under the right names
   - a made-up address shows the 404 page
 - [ ] **Credits:** under **Usage & billing**, production deploys haven't gone up.
@@ -104,7 +127,7 @@ This doesn't start a build and costs nothing. From now on, a push to `main` cost
 ### 4. First production deploy (15 credits)
 
 - [ ] **Merge the pull request.** Netlify makes a production deploy. Vercel redeploys as well, and the live site stays the same: I compared the builds of `main` and this branch, and the only file that differs is `letak-kalendari.pdf`, with the same pixels and a new creation date.
-- [ ] **Delete the broken first deploy before going public.** **Deploys** > select it > **Options > Delete deploy**. Making the project public exposes its production deploys, and that one holds a copy of the whole repository at its own permanent address. It can be deleted now that it's no longer the published one.
+- [ ] **Delete the broken first deploy before going public.** **Deploys** > select it > **Options > Delete deploy**. Making the project public exposes its production deploys, and that one is a broken page at its own address. Nothing in it is secret, since the repository is public anyway, but it shouldn't stay reachable. It can be deleted now that it's no longer the published one.
 - [ ] **Badge:** check again that it's off.
 - [ ] **Make the project public:** **Project configuration > General > Visitor access > Project visibility**, production: Public.
 - [ ] **Run the checks on the production address.** Here `x-robots-tag` and injected scripts fail instead of being notes.

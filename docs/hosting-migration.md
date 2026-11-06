@@ -156,3 +156,85 @@ The local server isn't Netlify's CDN. These are checked by running the script ag
 - the PDFs' headers as the CDN sends them
 - nothing injected into the page (the Powered by Netlify badge)
 - the bare-domain and HTTP redirects, and the certificate (live site only)
+
+## Credit budget
+
+**Rates,** confirmed on Netlify's pricing page and credit docs on 2026-11-06:
+
+| Item | Credits |
+|---|---|
+| Successful production deploy | 15 each |
+| Bandwidth | 20 per GB |
+| Web requests (edge function calls count as these) | 2 per 10,000 |
+| Deploy Previews, branch deploys, failed deploys, rolling back to an earlier deploy | 0 |
+| **Free plan limit** | **300 a month.** At zero, the site shows "Site not available" until the next month, and you can't buy more on Free. |
+
+### What one visit costs
+
+Measured in headless Chrome on the built site: a first-time visitor, all images loading, whole page scrolled, at 1366×768 and 390×844.
+
+| Part | Requests | Transfer | Note |
+|---|---|---|---|
+| Page, script, styles, images, icons | 14 | 210 KB | Laptop; 13 and 195 KB on a phone. Text compressed with gzip. |
+| Catalogue (390 KB) | 0.25 | 98 KB | **Assumes** 1 visit in 4 opens it |
+| Flyer (182 KB) | 0.05 | 9 KB | **Assumes** 1 visit in 20 opens it |
+| Large photo in the viewer | 0.3 | 30 KB | **Assumes** 3 visits in 10 open a photo of about 100 KB |
+| Crawlers, bots and everything else | 4 | 100 KB | **Assumes** 30% on top |
+| **Total used below** | **about 20** | **about 450 KB** | |
+
+The Google map doesn't count: it loads from Google. EmailJS doesn't either. Returning visitors cost less than this, because `/assets/*` stays in their browser's cache, and I didn't subtract that.
+
+### Monthly estimate
+
+So one visit costs about 0.013 credits.
+
+| Visits a month | Bandwidth | Requests | Traffic credits | With 4 production deploys (60) | Share of 300 |
+|---|---|---|---|---|---|
+| 1,000 | 0.45 GB | 20,000 | 13 | **73** | 24% |
+| 3,000 | 1.35 GB | 60,000 | 39 | **99** | 33% |
+| 10,000 | 4.5 GB | 200,000 | 130 | **190** | 63% |
+
+With 4 deploys a month, the limit is reached at about **18,000 visits**, or about 12 GB of traffic. For a site that's mainly a link you send to customers, deploys are likely to be the bigger cost, not visitors.
+
+**Check this against real numbers:** the Vercel dashboard's **Usage** page shows the last 30 days' data transfer and requests. Do this before moving, because that history stays behind on Vercel.
+
+### Deploy workflow
+
+Target: **at most 4 production deploys a month, in reviewed batches.**
+
+1. Work on a branch and push it. Nothing is charged.
+2. Open a pull request to `main`. Netlify builds a Deploy Preview: **0 credits**, as many as you like.
+3. Check the preview: `npm run check:hosting -- https://deploy-preview-<number>--<site>.netlify.app`, then look at it in the browser. The check itself uses a negligible amount of credits.
+4. Keep collecting finished work, then merge to `main` in a batch. **Only this costs 15 credits.**
+
+**To save credits:**
+
+- **Merges that only touch docs:** put `[skip netlify]` in the commit message so no production deploy starts. Netlify's docs say the marker has to be on the most recent commit of the push, and don't explicitly cover merge commits. So the first time, check on the **Deploys** page that nothing was deployed.
+- **Avoid "Retry deploy" and "Clear cache and deploy" when nothing is broken.** Each successful one is a production deploy.
+- **To undo a bad deploy,** use **Publish deploy** on an earlier one. It's instant and costs nothing. A new commit costs 15.
+
+### Only `main` is a production deploy
+
+This is a dashboard setting; `netlify.toml` can't set it. At **Project configuration > Developer settings > Continuous deployment > Branches and deploy contexts > Configure**:
+
+| Setting | Value |
+|---|---|
+| Production branch | `main` |
+| Branch deploys | None |
+| Deploy Previews | Any pull request against your production branch |
+
+### Watching the credits
+
+All under **Usage & billing** in the team's dashboard:
+
+- **The top of the page:** credits still available
+- **Credit usage breakdown:** credits by feature
+- **Account usage insights > Credits:** a daily graph split into production deploys, bandwidth and web requests
+
+Netlify also sends an e-mail and an in-app notice at **50%, 75% and 100%** of the monthly credits.
+
+**If credits run low:**
+
+- At 75%, stop deploying until the month resets.
+- If a bot is the cause, it shows up as a jump in bandwidth or web requests. The Free plan includes firewall traffic rules and basic rate limiting.
+- If the site gets paused, upgrading to Personal ($9 a month, 1,000 credits) is the quickest fix. While the Vercel project still exists, the [rollback](#rollback) works too.

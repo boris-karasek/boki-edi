@@ -44,7 +44,7 @@ Topic: moving the hosting from Vercel to Netlify's Free plan with no change visi
 |------|--------------|--------|
 | Inventory | Everything Vercel does today, from `vercel.json` and measured on the live site, plus where DNS is hosted | `cebfe9b` |
 | Config | <ul><li>`netlify.toml`: build, Node 24, redirects, headers</li><li>`npm run flyer` keeps it in step, through `scripts/lib/hosting-headers.mjs`</li><li>The flyer regenerated once to refresh its fingerprint: pixel-identical, new creation date</li></ul> | `ce2a056` |
-| Netlify behaviour | `netlify/edge-functions/permanent-redirects.js` answers `/products`, `/contact` and `/index.html` with 308. The rules in `netlify.toml` remain as a 301 safety net. | `b8457f3` |
+| Netlify behaviour | Plain 301 rules for `/products` and `/contact`. An edge function answering 308 was added in `b8457f3`, then dropped later on this branch. | `b8457f3`, later |
 | Checks | <ul><li>`npm run check:hosting`: the same checks locally or on any address</li><li>`npm run preview:netlify`</li></ul> | `58c625b` |
 | Credits | Measured page weight, monthly estimate, deploy workflow | `41cc325` |
 | Checklist | `docs/hosting-migration.md`, from the project's current state to removing Vercel, with rollback | `bf28f46` |
@@ -52,13 +52,12 @@ Topic: moving the hosting from Vercel to Netlify's Free plan with no change visi
 **Checked:**
 
 - **`npm run check:hosting`:** 34 passed, 0 failed, 1 skipped, in this folder and from a fresh clone.
-  - Redirects: `/products` and `/contact` → 308 with the right `location`
+  - Redirects: `/products` and `/contact` → 301 with the right `location`
   - Unknown URLs → 404 with the 404 page
   - Both PDFs → `application/pdf` with the right file names
   - Skipped: the `/assets/*` long cache, because the local server overwrites `Cache-Control`
 - **The checks match Vercel:** against the live site, 38 passed and 2 failed. Both failures are real: the bare domain's 307.
-- **The checks catch problems:** they failed as they should for the repository root published, the edge function broken or missing, the EmailJS key missing, a flyer's header missing, and a private project.
-- **Safety net:** with the edge function throwing an error, `/products` still redirects, with 301.
+- **The checks catch problems:** they failed as they should for the repository root published, a redirect rule missing, temporary or without its `#fragment`, the EmailJS key missing, a flyer's header missing, and a private project.
 - **Flyers:**
   - a new flyer in `flyers.js` gets its header in both configs, and a rename updates both
   - a repeat run changes nothing
@@ -70,7 +69,8 @@ Topic: moving the hosting from Vercel to Netlify's Free plan with no change visi
 ### Decisions
 
 - **All config in `netlify.toml`,** not `public/_redirects` and `public/_headers`. Files in `public/` end up in `dist/`, so Vercel would serve them on the live site until the switch.
-- **308 through an edge function.** Netlify's docs list only 301, 302, 404 and 200 for rules and call 307 unsupported, and its local server answers any 3xx, so a 308 rule can't be verified before it's live. These links are on printed flyers, so I didn't rely on it. If you'd rather keep it simple, delete the function: the rules give 301, which Google treats the same.
+- **Plain 301 rules for the old URLs (your decision).** Netlify's docs list only 301, 302, 404 and 200 for rules, and Google treats 301 and 308 the same, so an edge function for 308 wasn't worth the extra part. **Still to confirm on the Deploy Preview:** that the CDN keeps `#proizvodi` in `location`. If it doesn't, the function can come back from `b8457f3`.
+- **`/index.html` is no longer redirected.** Netlify serves it with a canonical link to `/`. A rule could loop on the home page and can't be tested locally, and nothing links to that address.
 - **Bare domain and HTTP → HTTPS answer 301 on Netlify,** with no setting to change it. This replaces the earlier plan for 308 on the bare domain. It's still better than today's 307, which isn't permanent.
 - **`netlify serve` instead of extending `npm run preview`:** it's Netlify's own build, parser and runtime rather than my imitation. `npm run preview` stays as it is.
 - **The CLI is installed under `~/.cache/boki-edi/`, not through `npx`:** `npx` aborted on npm's lock and left a broken cache.

@@ -8,8 +8,8 @@
 [build.environment]
   NODE_VERSION = "24"
 
-# Safety net only: netlify/edge-functions/permanent-redirects.js answers these two URLs with 308 first.
-# If that function ever fails, these rules keep the links on printed material working.
+# The old URLs, on printed material and in sent e-mails. 301 on Netlify, 308 on Vercel: Google treats
+# them the same. force = true makes the rule win over any file at that path.
 [[redirects]]
   from = "/products"
   to = "/#proizvodi"

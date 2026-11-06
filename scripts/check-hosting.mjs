@@ -5,12 +5,11 @@
 //        npm run check:hosting -- <url>        checks a deployed address, e.g. a Deploy Preview
 //        npm run preview:netlify               builds and serves it, to look at the site
 //
-// The local server is `netlify serve`: Netlify's own build (including packaging the edge function), config
-// parser and edge function runtime. The 290 MB CLI is installed once under ~/.cache/boki-edi, not with the
-// site: Netlify's build would install it too, and `npx` proved unreliable for a package this size (npm's
-// lock aborted the install and left a broken cache).
-// It is not Netlify's CDN, though: it answers any 3xx in a redirect rule, for example, and overwrites
-// Cache-Control. So also run this script against the Deploy Preview. See docs/hosting-migration.md.
+// The local server is `netlify serve`: Netlify's own build and config parser. The 290 MB CLI is installed
+// once under ~/.cache/boki-edi, not with the site: Netlify's build would install it too, and `npx` proved
+// unreliable for a package this size (npm's lock aborted the install and left a broken cache).
+// It is not Netlify's CDN, though: it may treat a redirect's #fragment differently, for example, and it
+// overwrites Cache-Control. So also run this script against the Deploy Preview. See docs/hosting-migration.md.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
@@ -24,7 +23,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const NETLIFY_CLI = "netlify-cli@27.16.2"; // needs Node 22.13 or newer
 const CLI_DIR = path.join(os.homedir(), ".cache", "boki-edi", NETLIFY_CLI);
 const LOCAL_URL = "http://localhost:8888"; // the default port of `netlify serve`
-const SERVER_TIMEOUT_MS = 5 * 60 * 1000; // includes the build; the first run downloads the edge function runtime
+const SERVER_TIMEOUT_MS = 5 * 60 * 1000; // includes the build
 const SITE_HOST = "www.boki-edi.com";
 const BARE_HOST = "boki-edi.com";
 
@@ -59,32 +58,36 @@ async function followRedirects(startUrl, method = "GET") {
   return { statuses, location, response };
 }
 
+// 301 on Netlify (netlify.toml), 308 on Vercel (vercel.json): Google treats them the same
+const isPermanent = (status) => status === 301 || status === 308;
 const titleOf = (html) => html.match(/<title>(.*?)<\/title>/s)?.[1];
 const hasNoindex = (html) => /<meta name="robots" content="noindex"/.test(html);
 
 // --- Checks -----------------------------------------------------------------------------------
 
 async function checkRedirects(base) {
-  section("Old URLs: 308 with the right location");
+  section("Old URLs: permanent redirect with the right location");
   const cases = [
     ["/products", "/#proizvodi"],
     ["/contact", "/#kontakt"],
     ["/products/", "/#proizvodi"],
     ["/contact/", "/#kontakt"],
     ["/products?a=1", "/?a=1#proizvodi"],
-    ["/index.html", "/"],
   ];
   for (const [from, to] of cases) {
     const { statuses, location } = await followRedirects(base + from);
-    const ok = statuses.length > 0 && statuses.every((status) => status === 308) && location === to;
-    const hint = statuses.includes(301) ? " (301: the edge function didn't answer)" : "";
-    check(ok, from, `${statuses.join(" → ") || "no redirect"} → ${location ?? "-"}${ok ? "" : hint}`);
+    const ok = statuses.length > 0 && statuses.every(isPermanent) && location === to;
+    check(ok, from, `${statuses.join(" → ") || "no redirect"} → ${location ?? "-"}`);
   }
   // `curl -I` sends HEAD
   for (const [from, to] of cases.slice(0, 2)) {
     const { statuses, location } = await followRedirects(base + from, "HEAD");
-    check(statuses.join() === "308" && location === to, `HEAD ${from}`, `${statuses.join(" → ")} → ${location}`);
+    check(statuses.length === 1 && isPermanent(statuses[0]) && location === to, `HEAD ${from}`, `${statuses.join(" → ")} → ${location}`);
   }
+  // Vercel redirects /index.html to /. Netlify serves the same page, whose canonical link points to /
+  const { statuses, response } = await followRedirects(`${base}/index.html`);
+  const hasCanonical = (await response.text()).includes(`<link rel="canonical" href="https://${SITE_HOST}/"`);
+  check(response.status === 200 && statuses.every(isPermanent) && hasCanonical, "/index.html", `${[...statuses, response.status].join(" → ")}, ${hasCanonical ? "canonical /" : "no canonical"}`);
 }
 
 async function checkHome(base, home, html, { isPreview }) {
@@ -196,7 +199,6 @@ async function checkOtherFiles(base) {
 // Only when checking the real domain
 async function checkDomain() {
   section("Domain");
-  const isPermanent = (status) => status === 301 || status === 308;
   const cases = [
     [`https://${BARE_HOST}/`, `https://${SITE_HOST}/`],
     [`https://${BARE_HOST}/katalog.pdf`, `https://${SITE_HOST}/katalog.pdf`],
@@ -288,15 +290,12 @@ async function startNetlifyServe() {
     if (isWindows) server.kill();
     else process.kill(-server.pid);
   };
-  const hasEdgeFunctions = existsSync(path.join(rootDir, "netlify", "edge-functions"));
-  const readyMessage = hasEdgeFunctions ? "Loaded edge function" : "Local dev server ready";
   let log = "";
   await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`netlify serve didn't start in time:\n${log}`)), SERVER_TIMEOUT_MS);
     const onOutput = (chunk) => {
       log += chunk;
-      // Until the edge function is loaded, /products would get the fallback rule instead
-      if (log.includes(readyMessage)) {
+      if (log.includes("Local dev server ready")) {
         clearTimeout(timer);
         resolve();
       }

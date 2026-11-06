@@ -11,7 +11,7 @@ Goal: move the hosting to Netlify's Free plan with no change visible to visitors
 3. **New Netlify projects are private by default.** On Free, only you can see a private project; everyone else gets a "no access" page. It has to be made public before the domain moves, but only after a correct production deploy.
 4. **Netlify may show visitors a "Powered by Netlify" badge.** Free projects created since 19 August 2026 start with it on. Turn it off, or the site visibly changes.
 5. **The bare domain will answer 301, not 308,** and HTTP → HTTPS likewise. Netlify has no setting for either. See [the reasons](#the-bare-domain-cant-return-308).
-6. **`/products` and `/contact` stay 308 through an edge function,** because redirect rules can't be relied on for 308. The Deploy Preview is what proves this on the real CDN.
+6. **`/products` and `/contact` will answer 301 instead of today's 308,** through plain rules in `netlify.toml`. Google treats the two the same. The Deploy Preview has to confirm one thing: that Netlify's CDN keeps the `#proizvodi` part of the redirect ([details](#why-plain-301-rules)).
 
 In the steps below, `<site>` is your project's name, as in `<site>.netlify.app`. The Netlify paths are from Netlify's docs on 2026-11-06; labels may differ slightly on screen.
 
@@ -99,7 +99,7 @@ This doesn't start a build and costs nothing. From now on, a push to `main` cost
   ```
 
   Open the pull request from `netlify-migration` to `main` on GitHub. Vercel builds its own preview of it too; that's harmless. If Netlify doesn't start a build, push an empty commit: `git commit --allow-empty -m "Trigger Deploy Preview" && git push`.
-- [ ] **Read the deploy log.** It should show Node 24, the three pre-render lines, no "may be out of date" warning, and the edge function being packaged. The summary should list 2 redirect rules and 3 header rules.
+- [ ] **Read the deploy log.** It should show Node 24, the three pre-render lines and no "may be out of date" warning. The summary should list 2 redirect rules and 3 header rules.
 - [ ] **Make previews public,** because they're private by default and the check can't log in: **Project configuration > General > Visitor access > Project visibility**, previews only. I'd leave them public: they contain only the built site, Netlify marks them `noindex`, and their canonical link points to `www`. Leave production private for now.
 - [ ] **Run the checks.** Everything must pass; NOTE lines are fine.
 
@@ -118,7 +118,8 @@ This doesn't start a build and costs nothing. From now on, a push to `main` cost
 
 | Check says | What to do |
 |---|---|
-| `/products` 301, "the edge function didn't answer" | Visitors are still redirected, so it isn't urgent. Look for the edge function in the deploy log. |
+| `/products` shows `301 → /`, without `#proizvodi` | Netlify's CDN dropped the fragment, so visitors would land at the top of the home page, not the products section. **Don't merge.** See [what to do](#why-plain-301-rules). |
+| Only `/products?a=1` fails | Not a blocker if the plain `/products` line passes: nothing links to it with a query. |
 | "the repository was published" | Netlify didn't read `netlify.toml`. Check that the Base directory is empty. |
 | "wasn't set for this build" | The environment variable is missing for this context. Fix it, then push a new commit. |
 | "This address is private" | The visibility setting above. |
@@ -188,8 +189,8 @@ Choose a quiet time, such as an evening, and allow an hour. **Nothing changes at
 - [ ] **By hand with `curl`:**
 
   ```bash
-  curl -I https://www.boki-edi.com/products             # 308, location: /#proizvodi
-  curl -I https://www.boki-edi.com/contact              # 308, location: /#kontakt
+  curl -I https://www.boki-edi.com/products             # 301, location: /#proizvodi
+  curl -I https://www.boki-edi.com/contact              # 301, location: /#kontakt
   curl -I https://boki-edi.com/                         # 301 to https://www.boki-edi.com/
   curl -I https://www.boki-edi.com/nepostoji            # 404
   curl -I https://www.boki-edi.com/katalog.pdf          # 200, application/pdf, "Boki-Edi katalog.pdf"
@@ -321,9 +322,9 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 
 | Behaviour | Vercel today | Netlify | What I did |
 |---|---|---|---|
-| `/products`, `/contact` | 308 | Rules can't be relied on for 308 (below) | **Edge function answers 308.** Local: 308, right `location`, query kept. |
-| `/products/`, `/contact/` | 308 → 308 → target | Rules ignore a trailing slash (docs) | Same function, one hop instead of two. Same result. |
-| `/index.html` | 308 to `/` | 200, a second copy of the home page (CDN) | Same function: 308 to `/`. |
+| `/products`, `/contact` | 308 | 301 through a rule | **Plain 301 rules** (below). Local: 301, right `location`, query kept. |
+| `/products/`, `/contact/` | 308 → 308 → target | Rules ignore a trailing slash (docs) | Same rules, one hop instead of two. Same result. |
+| `/index.html` | 308 to `/` | 200, a second copy of the home page (CDN) | **Left as it is.** Nothing links to it, and its canonical link tells Google to use `/`. I didn't add a rule: `/` is served from that same file, so a redirect could loop on the home page, and that can't be tested locally. |
 | Unknown URL | 404 with `404.html` | Same, automatically (CDN, local) | Nothing needed. |
 | `/nepostoji/` | 308, then 404 | 404 straight away (CDN, local) | Nothing needed: same result. |
 | `/404` | 200, `noindex` | 200, `noindex` (CDN, local) | Nothing needed: the same as now. |
@@ -337,20 +338,17 @@ From `dig` and the public registration data (RDAP), 2026-11-06:
 | `content-disposition: inline` on all files | Yes | No | Nothing needed: browsers show these files either way. |
 | `/Products`, `/KATALOG.PDF` | 404 | May work instead: Netlify ignores letter case in paths (CDN) | Left: at worst a mistyped link starts working. |
 
-#### Why 308 comes from an edge function
+#### Why plain 301 rules
 
-Netlify's own docs list 301, 302, 404 and 200 as redirect statuses, call 307 "currently unsupported", and never mention 308. The Nitro framework's source says the same and downgrades 307 and 308 for Netlify, and a forum user reported in 2021 that 307/308 rules led to a 404.
+Netlify's docs list 301, 302, 404 and 200 as redirect statuses, so 308 isn't something a rule can be relied on for. An edge function could answer 308, and an earlier commit on this branch did that (`b8457f3`). It was dropped as an extra moving part with no visible benefit: Google treats 301 and 308 the same way, as permanent, and browsers follow both.
 
-Netlify's local server doesn't settle it: it answers any 3xx in a rule, so a 308 rule would pass locally whatever the CDN does. I also didn't deploy anything to test it. Betting the links on your printed flyers on that wasn't worth it, so:
+**What the Deploy Preview must confirm:** that `location` still contains `#proizvodi` and `#kontakt`. The local server keeps them, but it isn't the CDN. Netlify's docs don't cover a fragment in a rule's target. Forum threads only say that a `#` in the *incoming* address can't be matched, and I found no report either way about one in the target.
 
-1. **`netlify/edge-functions/permanent-redirects.js` answers with 308.** An edge function sets its own status. Edge functions are billed as ordinary web requests, so it costs no more than any other request, and it only runs on these few URLs.
-2. **The 301 rules in `netlify.toml` stay as a safety net.** If the function fails, it's bypassed and the rule answers. I tested this locally by making the function throw: `/products` gave 301 to `/#proizvodi`, not a 404.
-
-**Simpler option, if you ever want it:** Google treats 301 and 308 the same way, as permanent. Deleting the edge function file leaves the plain 301 rules, with no visible change for visitors. I kept 308 because you asked for it.
+**If the CDN drops it,** `/products` would land at the top of the home page instead of the products section. `npm run check:hosting` reports this as a failure before anything goes live, at no cost. The fix is to bring the edge function back from `b8457f3`, because a function sets `location` itself. It can answer 301 or 308.
 
 #### The bare domain can't return 308
 
-Netlify redirects the bare domain to the primary domain by itself, with a 301, and has no setting for it. The merge-and-deploy checklist in `CHANGES.md` expects 308 there; on Netlify, expect **301**. That's still a real improvement on today's 307, because it tells Google the move is permanent.
+Netlify redirects the bare domain to the primary domain by itself, with a 301, and has no setting for it. The merge-and-deploy checklist in `CHANGES.md` expects 308 there, as it does for `/products` and `/contact`; on Netlify, expect **301** for all three. That's still a real improvement on today's 307, because it tells Google the move is permanent.
 
 One open forum report from August 2026 describes a bare domain answering 200 instead of redirecting, even though the dashboard said it would redirect. So the checks after the switch test this explicitly.
 
@@ -364,7 +362,7 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 | `npm run check:hosting -- <url>` | Runs the same checks on any address: a Deploy Preview, `*.netlify.app`, or the live site. |
 | `npm run preview:netlify` | Builds and serves with `netlify serve` at http://localhost:8888, to look around. Ctrl+C stops it. |
 
-**Why `netlify serve`:** it's the most faithful local option. It runs Netlify's own build, including packaging the edge function, then its config parser and edge function runtime. `netlify dev` skips the build. The results here were identical.
+**Why `netlify serve`:** it's the most faithful local option. It runs Netlify's own build and config parser. `netlify dev` skips the build. The results here were identical.
 
 **Why not plain `npx netlify-cli`:** I tried it, and npm's lock aborted the install of this 940-package tool, leaving a broken cache that made every later run exit silently. So the script installs the CLI once under `~/.cache/boki-edi/` (about 290 MB) and runs it from there. It isn't in `package.json`, so Netlify's own builds don't spend time installing it. It needs Node 22.13 or newer.
 
@@ -376,11 +374,11 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 
 | Check | Result |
 |---|---|
-| `/products` | 308, `location: /#proizvodi` |
-| `/contact` | 308, `location: /#kontakt` |
-| `/products/`, `/contact/` | 308 to the same targets |
-| `/products?a=1` | 308, `location: /?a=1#proizvodi` |
-| `/index.html` | 308, `location: /` |
+| `/products` | 301, `location: /#proizvodi` |
+| `/contact` | 301, `location: /#kontakt` |
+| `/products/`, `/contact/` | 301 to the same targets |
+| `/products?a=1` | 301, `location: /?a=1#proizvodi` |
+| `/index.html` | 200, canonical link to `/` |
 | `/nepostoji-provera`, with a trailing slash, and a deep `.html` path | 404, the page "Stranica nije pronađena", `noindex` |
 | `/katalog.pdf` | 200, `application/pdf`, `inline; filename="Boki-Edi katalog.pdf"` |
 | `/letak-kalendari.pdf` | 200, `application/pdf`, `inline; filename="Boki-Edi lajsne za kalendare.pdf"` |
@@ -395,7 +393,9 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 | Deliberately broken | What the check reported |
 |---|---|
 | Publishing the repository root, like the first deploy | 20 failures, starting with "the repository was published, not dist/" |
-| Edge function throwing an error, or missing | `/products` 301, "the edge function didn't answer". The safety net still redirected. |
+| A redirect rule missing | `/products` gives 404 |
+| A rule made temporary (302) | `/products` fails: not permanent |
+| A rule's target without `#proizvodi` | `/products` fails: `301 → /` |
 | Built without the EmailJS key | "REACT_APP_EMAILJS_PUBLIC_KEY wasn't set for this build" |
 | A flyer's header missing from `netlify.toml` | That PDF fails, with no file name in the response |
 | A private project answering 401 | Stops and points to the visibility setting |
@@ -404,7 +404,7 @@ One open forum report from August 2026 describes a bare domain answering 200 ins
 
 The local server isn't Netlify's CDN. These are checked by running the script against the Deploy Preview, then the live site:
 
-- that the edge function really answers 308 on the CDN
+- that the CDN answers 301 and keeps `#proizvodi` and `#kontakt` in `location`
 - the `/assets/*` long cache
 - the PDFs' headers as the CDN sends them
 - nothing injected into the page (the Powered by Netlify badge)
@@ -418,7 +418,7 @@ The local server isn't Netlify's CDN. These are checked by running the script ag
 |---|---|
 | Successful production deploy | 15 each |
 | Bandwidth | 20 per GB |
-| Web requests (edge function calls count as these) | 2 per 10,000 |
+| Web requests | 2 per 10,000 |
 | Deploy Previews, branch deploys, failed deploys, rolling back to an earlier deploy | 0 |
 | **Free plan limit** | **300 a month.** At zero, the site shows "Site not available" until the next month, and you can't buy more on Free. |
 

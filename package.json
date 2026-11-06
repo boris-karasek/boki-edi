@@ -10,6 +10,8 @@
     "dev": "vite",
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "preview": "node scripts/preview.mjs",
+    "preview:netlify": "node scripts/check-hosting.mjs --serve",
+    "check:hosting": "node scripts/check-hosting.mjs",
     "thumbnails": "node scripts/make-thumbnails.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "catalog": "node scripts/make-catalog.mjs",

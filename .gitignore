@@ -6,3 +6,4 @@ dist-ssr
 .env
 catalog-draft
 flyer-draft
+.netlify

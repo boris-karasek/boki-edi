@@ -35,6 +35,8 @@ Environment variables (put them in `.env`, which git ignores; never commit value
 | `npm run dev` | Development server |
 | `npm run build` | Client build, server build, then pre-render: `dist/index.html`, `dist/404.html`, `dist/sitemap.xml`. Warns if the catalogue or a flyer may be out of date. |
 | `npm run preview` | Serves `dist/` like Vercel (redirects, clean URLs, headers from `vercel.json`, real 404) |
+| `npm run preview:netlify` | Builds and serves the site with Netlify's own tools (`netlify serve`) at http://localhost:8888. Needs Node 22.13 or newer; installs the CLI once under `~/.cache/boki-edi/`. |
+| `npm run check:hosting` | Checks redirects, the 404, the PDFs' headers and more on that local server. `-- <url>` checks a deployed address. See [docs/hosting-migration.md](docs/hosting-migration.md). |
 | `npm run thumbnails` | Makes the 4:3 card images in `src/assets/thumbs/` from the photos in `src/assets/` |
 | `npm run catalog` | Makes `public/katalog.pdf`, `src/data/catalog.json` and `docs/catalog-preview/`. `-- --draft` makes a marked draft in `catalog-draft/`. |
 | `npm run flyer` | Makes all flyers; `-- kalendari` makes one, `-- --draft <name>` a draft in `flyer-draft/` |

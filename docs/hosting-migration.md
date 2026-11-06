@@ -100,3 +100,59 @@ Netlify's local server doesn't settle it: it answers any 3xx in a rule, so a 308
 Netlify redirects the bare domain to the primary domain by itself, with a 301, and has no setting for it. The merge-and-deploy checklist in `CHANGES.md` expects 308 there; on Netlify, expect **301**. That's still a real improvement on today's 307, because it tells Google the move is permanent.
 
 One open forum report from August 2026 describes a bare domain answering 200 instead of redirecting, even though the dashboard said it would redirect. So the checks after the switch test this explicitly.
+
+## Checking the config
+
+`npm run preview` stays as it is: quick, based on `vercel.json`, and used by `npm run screenshots`. It's my own imitation of a host, so it can't prove anything about Netlify. Two new commands use Netlify's real tools instead:
+
+| Command | What it does |
+|---|---|
+| `npm run check:hosting` | Builds and serves the site with `netlify serve`, runs every check below, and stops the server. |
+| `npm run check:hosting -- <url>` | Runs the same checks on any address: a Deploy Preview, `*.netlify.app`, or the live site. |
+| `npm run preview:netlify` | Builds and serves with `netlify serve` at http://localhost:8888, to look around. Ctrl+C stops it. |
+
+**Why `netlify serve`:** it's the most faithful local option. It runs Netlify's own build, including packaging the edge function, then its config parser and edge function runtime. `netlify dev` skips the build. The results here were identical.
+
+**Why not plain `npx netlify-cli`:** I tried it, and npm's lock aborted the install of this 940-package tool, leaving a broken cache that made every later run exit silently. So the script installs the CLI once under `~/.cache/boki-edi/` (about 290 MB) and runs it from there. It isn't in `package.json`, so Netlify's own builds don't spend time installing it. It needs Node 22.13 or newer.
+
+**Stop `npm run preview` first:** `netlify serve` rebuilds `dist/`, and the NTFS drive refuses that while files are in use.
+
+### Results on 2026-11-06
+
+`npm run check:hosting`: **34 passed, 0 failed, 1 skipped.** The same result came from a fresh clone of this branch.
+
+| Check | Result |
+|---|---|
+| `/products` | 308, `location: /#proizvodi` |
+| `/contact` | 308, `location: /#kontakt` |
+| `/products/`, `/contact/` | 308 to the same targets |
+| `/products?a=1` | 308, `location: /?a=1#proizvodi` |
+| `/index.html` | 308, `location: /` |
+| `/nepostoji-provera`, with a trailing slash, and a deep `.html` path | 404, the page "Stranica nije pronađena", `noindex` |
+| `/katalog.pdf` | 200, `application/pdf`, `inline; filename="Boki-Edi katalog.pdf"` |
+| `/letak-kalendari.pdf` | 200, `application/pdf`, `inline; filename="Boki-Edi lajsne za kalendare.pdf"` |
+| Script and stylesheet | `application/javascript` and `text/css`: the MIME error from the first deploy is gone |
+| Repository files (`/package.json`, `/src/index.jsx`, `/CHANGES.md`, `/netlify.toml`) | 404 |
+| `/assets/*` long cache | **Skipped locally.** The rule matches (a test header came through), but the local server overwrites `Cache-Control`. |
+
+**The checks match today's site.** Run against the live Vercel site, the same script gave 38 passed and 2 failed. Both failures are real: the bare domain's 307.
+
+**The checks do fail when something is wrong:**
+
+| Deliberately broken | What the check reported |
+|---|---|
+| Publishing the repository root, like the first deploy | 20 failures, starting with "the repository was published, not dist/" |
+| Edge function throwing an error, or missing | `/products` 301, "the edge function didn't answer". The safety net still redirected. |
+| Built without the EmailJS key | "REACT_APP_EMAILJS_PUBLIC_KEY wasn't set for this build" |
+| A flyer's header missing from `netlify.toml` | That PDF fails, with no file name in the response |
+| A private project answering 401 | Stops and points to the visibility setting |
+
+### What only the real deployment can prove
+
+The local server isn't Netlify's CDN. These are checked by running the script against the Deploy Preview, then the live site:
+
+- that the edge function really answers 308 on the CDN
+- the `/assets/*` long cache
+- the PDFs' headers as the CDN sends them
+- nothing injected into the page (the Powered by Netlify badge)
+- the bare-domain and HTTP redirects, and the certificate (live site only)

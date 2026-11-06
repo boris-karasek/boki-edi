@@ -5,6 +5,59 @@ Newest session first.
 
 ---
 
+## Netlify migration, preparation — 2026-11-06 (branch `netlify-migration`)
+
+Topic: moving the hosting from Vercel to Netlify's Free plan with no change visible to visitors or Google. Prepared and checked locally only: nothing is pushed or deployed, and Vercel and DNS are untouched. **Your checklist is in [docs/hosting-migration.md](docs/hosting-migration.md).** It replaces the Vercel part of the merge-and-deploy checklist below.
+
+### Done
+
+| Step | What changed | Commit |
+|------|--------------|--------|
+| Inventory | Everything Vercel does today, from `vercel.json` and measured on the live site, plus where DNS is hosted | `cebfe9b` |
+| Config | <ul><li>`netlify.toml`: build, Node 24, redirects, headers</li><li>`npm run flyer` keeps it in step, through `scripts/lib/hosting-headers.mjs`</li><li>The flyer regenerated once to refresh its fingerprint: pixel-identical, new creation date</li></ul> | `ce2a056` |
+| Netlify behaviour | `netlify/edge-functions/permanent-redirects.js` answers `/products`, `/contact` and `/index.html` with 308. The rules in `netlify.toml` remain as a 301 safety net. | `b8457f3` |
+| Checks | <ul><li>`npm run check:hosting`: the same checks locally or on any address</li><li>`npm run preview:netlify`</li></ul> | `58c625b` |
+| Credits | Measured page weight, monthly estimate, deploy workflow | `41cc325` |
+| Checklist | `docs/hosting-migration.md`, from the project's current state to removing Vercel, with rollback | `bf28f46` |
+
+**Checked:**
+
+- **`npm run check:hosting`:** 34 passed, 0 failed, 1 skipped, in this folder and from a fresh clone.
+  - Redirects: `/products` and `/contact` → 308 with the right `location`
+  - Unknown URLs → 404 with the 404 page
+  - Both PDFs → `application/pdf` with the right file names
+  - Skipped: the `/assets/*` long cache, because the local server overwrites `Cache-Control`
+- **The checks match Vercel:** against the live site, 38 passed and 2 failed. Both failures are real: the bare domain's 307.
+- **The checks catch problems:** they failed as they should for the repository root published, the edge function broken or missing, the EmailJS key missing, a flyer's header missing, and a private project.
+- **Safety net:** with the edge function throwing an error, `/products` still redirects, with 301.
+- **Flyers:**
+  - a new flyer in `flyers.js` gets its header in both configs, and a rename updates both
+  - a repeat run changes nothing
+  - the build warning fires when `flyers.js` or `make-flyer.mjs` changes, and stays silent after `npm run flyer`
+- **The live site won't change on merge:** comparing builds of `main` and this branch, the only file that differs is `letak-kalendari.pdf`, with the same size and pixels.
+
+**Not checked, because nothing was deployed:** anything on Netlify's real CDN. Step 3 of the checklist does this on a free Deploy Preview.
+
+### Decisions
+
+- **All config in `netlify.toml`,** not `public/_redirects` and `public/_headers`. Files in `public/` end up in `dist/`, so Vercel would serve them on the live site until the switch.
+- **308 through an edge function.** Netlify's docs list only 301, 302, 404 and 200 for rules and call 307 unsupported, and its local server answers any 3xx, so a 308 rule can't be verified before it's live. These links are on printed flyers, so I didn't rely on it. If you'd rather keep it simple, delete the function: the rules give 301, which Google treats the same.
+- **Bare domain and HTTP → HTTPS answer 301 on Netlify,** with no setting to change it. This replaces the earlier plan for 308 on the bare domain. It's still better than today's 307, which isn't permanent.
+- **`netlify serve` instead of extending `npm run preview`:** it's Netlify's own build, parser and runtime rather than my imitation. `npm run preview` stays as it is.
+- **The CLI is installed under `~/.cache/boki-edi/`, not through `npx`:** `npx` aborted on npm's lock and left a broken cache.
+- **`hosting-headers.mjs` is outside the flyers' fingerprint,** so hosting changes don't mark printed flyers as stale. `make-catalog.mjs` still mentions `vercel.json` in a comment; I left it because editing that file would set off the catalogue's warning.
+
+### Open questions / next steps
+
+- [ ] **The domain expires on 2026-12-17.** Confirm that it renews. This is the most urgent item here, whatever happens with the move.
+- [ ] **Review the branch,** then follow [the checklist](docs/hosting-migration.md#checklist).
+- [ ] **Search Console ownership:** I found no Google record in DNS and no tag or file in the site. Check which method it relies on (step 0).
+- [ ] **The Vercel 307 → 308 item below is no longer needed** if the move goes ahead.
+- [ ] **After the switch:** remove `vercel.json` and the other Vercel leftovers (step 7).
+- [ ] **`docs/seo-audit.md` is still uncommitted,** as before; this work doesn't include it.
+
+---
+
 ## Lajsna photo change — 2026-11-03 (branch `reorganisation`)
 
 The catalogue's Lajsna card and the calendar flyer's first photo now show the strip mounted on a calendar (`Lajsna za kalendare veca.webp`) instead of the strip alone on gray. It shows better how the product looks in use. The website is unchanged. Nothing was merged or deployed.

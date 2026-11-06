@@ -5,6 +5,35 @@ Newest session first.
 
 ---
 
+## Public repository and secret scan — 2026-11-06 (branch `netlify-migration`)
+
+Topic: the repository stays public, as part of your portfolio, so the plan to make it private is dropped. Nothing is pushed or deployed, and history wasn't rewritten.
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| `.env*` ignored | Only `.env` and `*.local` were; `.env.production` wasn't. Now `.env*`. | `6c57893` |
+| Checklist | <ul><li>The private-repository step is gone</li><li>New: approval for fork pull requests, private deploy logs</li><li>New: [EmailJS protection](docs/hosting-migration.md#emailjs-protection)</li></ul> | `0f18960` |
+| SEO audit | `docs/seo-audit.md` committed, trimmed for a public repository | `8697bf1` |
+
+### Secret scan
+
+- **gitleaks 8.30.1 over all refs, including GitHub's pull request ref:** 69 commits scanned, no findings. It has no rule for EmailJS keys and doesn't read binary files.
+- **Manual search of every added line and 86 binary files:** only the EmailJS service and template IDs, which are public identifiers and are in the site's JavaScript anyway.
+- **File names:** one hit, below.
+
+**In the code:** the only key used is the EmailJS public key (`src/components/ContactForm.jsx`). The private key isn't used anywhere.
+
+### Open questions / next steps
+
+- [ ] **Old EmailJS key:** `.env` was in the first commit (`d9bb3eb`) and removed the same day (`9ce025a`), so it's still in the public history. It holds an older public key, different from the current one and not on the site. Confirm in the EmailJS dashboard that it's no longer active. I don't recommend rewriting history for this.
+- [ ] **EmailJS:** go through the protection section of the checklist. The domain whitelist needs a paid plan, and CAPTCHA needs a code change first.
+- [ ] **New README for recruiters:** drafted, waiting for your review. The current README's maintenance notes would move to `docs/development.md`.
+- [ ] **GitHub's About box:** the website field still says `boki-edi.vercel.app`.
+
+---
+
 ## Netlify migration, preparation — 2026-11-06 (branch `netlify-migration`)
 
 Topic: moving the hosting from Vercel to Netlify's Free plan with no change visible to visitors or Google. Prepared and checked locally only: nothing is pushed or deployed, and Vercel and DNS are untouched. **Your checklist is in [docs/hosting-migration.md](docs/hosting-migration.md).** It replaces the Vercel part of the merge-and-deploy checklist below.
@@ -54,7 +83,7 @@ Topic: moving the hosting from Vercel to Netlify's Free plan with no change visi
 - [ ] **Search Console ownership:** I found no Google record in DNS and no tag or file in the site. Check which method it relies on (step 0).
 - [ ] **The Vercel 307 → 308 item below is no longer needed** if the move goes ahead.
 - [ ] **After the switch:** remove `vercel.json` and the other Vercel leftovers (step 7).
-- [ ] **`docs/seo-audit.md` is still uncommitted,** as before; this work doesn't include it.
+- [x] **`docs/seo-audit.md` was uncommitted** → committed in the session above.
 
 ---
 

@@ -1,0 +1,39 @@
+# Netlify configuration; the settings here override the dashboard. See docs/hosting-migration.md.
+# vercel.json stays until the switch is done: keep the redirects and headers in both files in step.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# The old URLs, on printed material and in sent e-mails. 301 on Netlify, 308 on Vercel: Google treats
+# them the same. force = true makes the rule win over any file at that path.
+[[redirects]]
+  from = "/products"
+  to = "/#proizvodi"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/contact"
+  to = "/#kontakt"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/katalog.pdf"
+  [headers.values]
+    Content-Disposition = "inline; filename=\"Boki-Edi katalog.pdf\""
+
+# Flyers: `npm run flyer` adds or updates the entries below this line.
+[[headers]]
+  for = "/letak-kalendari.pdf"
+  [headers.values]
+    Content-Disposition = "inline; filename=\"Boki-Edi lajsne za kalendare.pdf\""

@@ -1,101 +1,52 @@
 # Boki-Edi website
 
-One-page website of Boki-Edi (Dobanovci, Belgrade, since 2007), a workshop that makes small metal parts: calendar strips, folder mechanisms, corners for A-boards and other small hardware. Live at https://www.boki-edi.com.
+**Live site: https://www.boki-edi.com**
 
-The site text is Serbian (Latin script); code comments and commits are English. Dimensions, quantities, packaging, lead times and prices are never published: they are agreed with each customer.
+I built and maintain this site for my family's business.
 
-**Stack:** Vite + React, pre-rendered to static HTML at build time, hosted on Vercel. The contact form sends e-mail through EmailJS (`@emailjs/browser`).
+Boki-Edi is a small metal workshop in Belgrade, Serbia, that makes hardware for calendar printers and folder makers. The site is in real use: the business sends it to customers, and its links are printed on flyers and in QR codes. Its text is in Serbian.
 
-## Requirements
+![Home page of the Boki-Edi website](docs/screenshots/first-screen-1366x768.png)
 
-- **Node.js 20 or newer**
-- Optional, only for the generator scripts:
-  - **Google Chrome** for the catalogue, the flyers and the screenshots. It's found in its usual place on Linux, macOS and Windows; otherwise set `CHROME=/path/to/chrome`.
-  - **poppler-utils** (`pdftoppm`, `pdffonts`) for the catalogue's and flyers' page images and font check. Without it, these steps are skipped with a note.
-  - **ImageMagick 7** (`magick`) and the **Noto Sans** fonts (Linux: `fonts-noto-core`) for the link-preview image.
+## Tech stack
 
-## Setup
+- **Frontend:** React 18, React Router, Tailwind CSS, built with Vite
+- **Build tooling:** Node.js scripts, headless Chrome over the DevTools protocol, sharp
+- **Contact form:** EmailJS
+- **Hosting:** Vercel, with a move to Netlify prepared
+
+## What was built
+
+- **Pre-rendering for SEO.** The React app is rendered to static HTML at build time and hydrated in the browser, so search engines and link previews get the full content without JavaScript. Each page has its own metadata, plus structured data, a sitemap and a real 404 status. Lighthouse on the live site (mobile, November 2026): Performance 99–100; Accessibility, Best Practices and SEO 100. ([prerender.mjs](scripts/prerender.mjs))
+- **PDF catalogue and flyer generator.** One command turns the site's product data into print-ready PDFs with clickable links and vector QR codes. The build refuses a PDF if a text is missing, a page overflows or an unexpected font gets embedded, and `npm run build` warns when a PDF is out of date with its sources. ([make-catalog.mjs](scripts/make-catalog.mjs), [make-flyer.mjs](scripts/make-flyer.mjs), [the catalogue](public/katalog.pdf))
+- **Hosting migration with automated checks.** A move from Vercel to Netlify's free plan, prepared so visitors and Google see no change: plain 301 rules keep the old URLs working, and the credit budget is based on measured page weight. A script checks redirects, the 404, MIME types and PDF headers, locally or on any URL; it was validated against the live site and against deliberately broken setups. The switch itself is still to come. ([check-hosting.mjs](scripts/check-hosting.mjs), [the plan](docs/hosting-migration.md))
+- **Accessible, stable interface.** Product tabs with ARIA roles and keyboard control, deep links that printed QR codes rely on, no layout shift, and all content readable with JavaScript off. ([Products.jsx](src/sections/Products.jsx))
+- **Documented decisions.** A [log of the changes and the reasons](CHANGES.md), and an [SEO audit with a phased plan](docs/seo-audit.md).
+
+Developed with Claude Code as an AI pair programmer, so most commits carry a co-author line. The requirements, decisions and review are mine.
+
+## Run it
+
+Needs Node.js 20 or newer.
 
 ```bash
+git clone https://github.com/boris-karasek/boki-edi.git
+cd boki-edi
 npm install
+npm run dev      # http://localhost:5173
 ```
-
-Environment variables (put them in `.env`, which git ignores; never commit values):
-
-| Variable | Used for |
-|---|---|
-| `REACT_APP_EMAILJS_PUBLIC_KEY` | EmailJS public key for the contact form (also set in Vercel) |
-| `CHROME` | optional: path to Chrome for the generator scripts |
-| `PORT` | optional: port for `npm run preview` (default 4173) |
-
-## Commands
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Development server |
-| `npm run build` | Client build, server build, then pre-render: `dist/index.html`, `dist/404.html`, `dist/sitemap.xml`. Warns if the catalogue or a flyer may be out of date. |
-| `npm run preview` | Serves `dist/` like Vercel (redirects, clean URLs, headers from `vercel.json`, real 404) |
-| `npm run thumbnails` | Makes the 4:3 card images in `src/assets/thumbs/` from the photos in `src/assets/` |
-| `npm run catalog` | Makes `public/katalog.pdf`, `src/data/catalog.json` and `docs/catalog-preview/`. `-- --draft` makes a marked draft in `catalog-draft/`. |
-| `npm run flyer` | Makes all flyers; `-- kalendari` makes one, `-- --draft <name>` a draft in `flyer-draft/` |
-| `npm run screenshots` | Screenshots of the built site into `docs/screenshots/` (run `npm run build` first) |
-| `bash scripts/make-og-image.sh` | Remakes `public/og-image.jpg`, the link-preview image (run after changing the headline) |
+| `npm run build` | Builds and pre-renders the site into `dist/` |
+| `npm run preview` | Serves the build with the production redirects and headers |
+| `npm run check:hosting` | Runs the hosting checks on a local Netlify server (Node 22.13+) |
+| `npm run catalog`, `npm run flyer` | Regenerates the PDFs (needs Google Chrome) |
 
-## Where to edit
+Only the contact form needs configuration: put an EmailJS public key in `.env` as `REACT_APP_EMAILJS_PUBLIC_KEY`. Everything else works without it.
 
-| What | Where |
-|---|---|
-| Products and groups (group order = tab order) | `src/data/products.js` |
-| Photo framing (cards, catalogue, flyers) | `FRAMING` in `scripts/lib/framing.mjs` |
-| Address, phone, e-mail | `src/data/company.js` |
-| Headline, intro and benefits (site and catalogue) | `src/data/about.js` |
-| Page title, description, preview image | `src/seo.js` |
-| Flyers | `src/data/flyers.js` |
-| Catalogue texts and layout | `TEXT` in `scripts/make-catalog.mjs`, `scripts/catalog/catalog.css` |
-| Page sections and menu | `src/pages/Home.jsx`, `src/sections/`, `src/components/NavBar.jsx` |
-| Background (brushed steel) | `.background-div` in `src/index.css` |
+Maintenance notes, such as how to add a product, are in [docs/development.md](docs/development.md).
 
-Keep the section ids (`#pocetna`, `#prednosti`, `#proizvodi`, `#kontakt`) and the group ids unchanged: the menu, the redirects and links already sent to customers use them.
+## Ownership
 
-## Adding or changing a product
-
-1. **Photo** (if new or replaced): put the `.webp` in `src/assets/` and run `npm run thumbnails`. Check the card image in `src/assets/thumbs/`: the whole part should be visible with about 20 px of background on every side (the cards zoom on hover). If not, add an entry for the photo to `FRAMING` in `scripts/lib/framing.mjs` and run it again.
-2. **Entry** in the right group in `src/data/products.js`: `name`, a short `description` (cards show 2 lines), `...photo("File.webp")` and `alt`. Optional, for the catalogue only: `fullDescription`, `catalogPhoto`, `inCatalog: false`.
-3. **Check** it in `npm run dev`.
-4. **Catalogue:** run `npm run catalog` and look at `docs/catalog-preview/page-*.png`. If the photo or text is also on a flyer, run `npm run flyer`.
-5. **Build:** `npm run build` should print no "may be out of date" warning.
-6. **Commit** the photo, its card image, `products.js` and the catalogue outputs (`public/katalog.pdf`, `src/data/catalog.json`, `docs/catalog-preview/`).
-
-The catalogue and the flyers aren't made on Vercel (no Chrome there), so their files are committed.
-
-## Deploy
-
-Pushing to `main` deploys production on Vercel. Project settings:
-
-- Framework Preset: Vite
-- Build Command: `npm run build` (not `vite build`, which skips the pre-render)
-- Output Directory: `dist`
-- Node.js: 20 or newer
-- Environment variable `REACT_APP_EMAILJS_PUBLIC_KEY` set
-
-`vercel.json` holds the redirects (`/products` → `/#proizvodi`, `/contact` → `/#kontakt`, 308), clean URLs and the file-name headers for the PDFs. `npm run flyer` adds the header for a new flyer itself.
-
-## Links for customers
-
-| Link | Opens |
-|---|---|
-| https://www.boki-edi.com/#fascikle | Products, Fascikle i registratori tab |
-| https://www.boki-edi.com/#kalendari | Products, Kalendari tab |
-| https://www.boki-edi.com/#ramovi | Products, Ramovi i A table tab |
-| https://www.boki-edi.com/#ostalo | Products, Ostalo tab |
-| https://www.boki-edi.com/katalog.pdf | PDF catalogue |
-| https://www.boki-edi.com/letak-kalendari.pdf | Flyer for calendar printers (not linked from the site) |
-
-An inquiry with the subject filled in: `/?proizvod=<name>#kontakt`, e.g. https://www.boki-edi.com/?proizvod=Brzovez#kontakt.
-
-## More
-
-- [CHANGES.md](CHANGES.md): history of the reorganisation, decisions, open questions and the merge-and-deploy checklist
-- [docs/design-brief.md](docs/design-brief.md): colors, fonts, layout and the page background
-
-**Local note:** on the NTFS drive, stop `npm run preview` before `npm run build`, otherwise emptying `dist/` fails.
+The code is published as a portfolio piece. The product photos, product texts, and the Boki-Edi name and logo belong to Boki-Edi and may not be reused without permission. Noto Sans in `scripts/lib/fonts/` is under the SIL Open Font License.

@@ -5,6 +5,120 @@ Newest session first.
 
 ---
 
+## Decisions before the push — 2026-11-06 (branch `netlify-migration`)
+
+Topic: your decisions on the open questions from the two sessions below. Nothing is pushed or deployed. The checklist is in [docs/hosting-migration.md](docs/hosting-migration.md).
+
+### Done
+
+| Decision | What changed | Commit |
+|----------|--------------|--------|
+| Plain 301 rules | The edge function is gone. `/products` and `/contact` answer 301 from `netlify.toml`. The check accepts 301 or 308, so it still works against Vercel. | `0b5d7ce` |
+| SEO audit trimmed | The audit's commit was rewritten rather than fixed on top, so the full version isn't on this branch. | `8697bf1` |
+| README for recruiters | New `README.md`. The maintenance notes moved to `docs/development.md`. No license; an Ownership section instead. | `143619a` |
+| Checklist | <ul><li>Step 0 starts with renewing at Loopia and checking the nameservers there</li><li>How to add a Search Console Domain property</li><li>Builds must be active before the pull request</li><li>New step 7: moving DNS from Vercel to Loopia, at least a week after the switch</li><li>Removing Vercel is now step 8</li></ul> | `15aa45e` |
+
+**Checked:**
+
+- **`npm run check:hosting`:** 34 passed, 0 failed, 1 skipped, from a fresh clone. It fails as it should when a rule is missing, temporary or loses its `#fragment`. Against the live Vercel site: 38 passed and 2 failed, both the bare domain's 307.
+- **What a merge changes on the live site:** of the 39 files in the build, 38 are byte-identical to what's live now. The other is `letak-kalendari.pdf`: same size and pixels, new creation date. `vercel.json`, `src/`, `index.html` and the lockfile are unchanged, and `package.json` only gains two scripts.
+- **The trim:** I searched every commit on this branch, including commit messages, and none of the removed text is left.
+
+### Decisions
+
+- **`/index.html` is no longer redirected.** It came with dropping the edge function: see the Netlify migration section below.
+
+### Open questions / next steps
+
+- [ ] **Deploy Preview (step 3):** confirm that Netlify's CDN keeps `#proizvodi` and `#kontakt` in `location`. Netlify's docs don't cover this, and I found no report either way. If it doesn't, the edge function can come back from `b8457f3`.
+- [ ] **Renew the domain at Loopia** before 2026-12-17.
+- [ ] **Old EmailJS key:** you're checking it yourself; it stays in the history.
+- [ ] **GitHub's About box:** still `boki-edi.vercel.app`.
+
+---
+
+## Public repository and secret scan — 2026-11-06 (branch `netlify-migration`)
+
+Topic: the repository stays public, as part of your portfolio, so the plan to make it private is dropped. Nothing is pushed or deployed, and history wasn't rewritten.
+
+### Done
+
+| Request | What changed | Commit |
+|---------|--------------|--------|
+| `.env*` ignored | Only `.env` and `*.local` were; `.env.production` wasn't. Now `.env*`. | `6c57893` |
+| Checklist | <ul><li>The private-repository step is gone</li><li>New: approval for fork pull requests, private deploy logs</li><li>New: [EmailJS protection](docs/hosting-migration.md#emailjs-protection)</li></ul> | `0f18960` |
+| SEO audit | `docs/seo-audit.md` committed, trimmed for a public repository | `8697bf1` |
+
+### Secret scan
+
+- **gitleaks 8.30.1 over all refs, including GitHub's pull request ref:** 69 commits scanned, no findings. It has no rule for EmailJS keys and doesn't read binary files.
+- **Manual search of every added line and 86 binary files:** only the EmailJS service and template IDs, which are public identifiers and are in the site's JavaScript anyway.
+- **File names:** one hit, below.
+
+**In the code:** the only key used is the EmailJS public key (`src/components/ContactForm.jsx`). The private key isn't used anywhere.
+
+### Open questions / next steps
+
+- [ ] **Old EmailJS key:** `.env` was in the first commit (`d9bb3eb`) and removed the same day (`9ce025a`), so it's still in the public history. It holds an older public key, different from the current one and not on the site. You're checking it against the EmailJS dashboard yourself, and it stays in the history (your decision).
+- [ ] **EmailJS:** go through the protection section of the checklist. The domain whitelist needs a paid plan, and CAPTCHA needs a code change first.
+- [x] **New README for recruiters** → committed in the session above.
+- [ ] **GitHub's About box:** the website field still says `boki-edi.vercel.app`.
+
+---
+
+## Netlify migration, preparation — 2026-11-06 (branch `netlify-migration`)
+
+Topic: moving the hosting from Vercel to Netlify's Free plan with no change visible to visitors or Google. Prepared and checked locally only: nothing is pushed or deployed, and Vercel and DNS are untouched. **Your checklist is in [docs/hosting-migration.md](docs/hosting-migration.md).** It replaces the Vercel part of the merge-and-deploy checklist below.
+
+### Done
+
+| Step | What changed | Commit |
+|------|--------------|--------|
+| Inventory | Everything Vercel does today, from `vercel.json` and measured on the live site, plus where DNS is hosted | `cebfe9b` |
+| Config | <ul><li>`netlify.toml`: build, Node 24, redirects, headers</li><li>`npm run flyer` keeps it in step, through `scripts/lib/hosting-headers.mjs`</li><li>The flyer regenerated once to refresh its fingerprint: pixel-identical, new creation date</li></ul> | `ce2a056` |
+| Netlify behaviour | Plain 301 rules for `/products` and `/contact`. An edge function answering 308 was added in `b8457f3`, then dropped later on this branch. | `b8457f3`, later |
+| Checks | <ul><li>`npm run check:hosting`: the same checks locally or on any address</li><li>`npm run preview:netlify`</li></ul> | `58c625b` |
+| Credits | Measured page weight, monthly estimate, deploy workflow | `41cc325` |
+| Checklist | `docs/hosting-migration.md`, from the project's current state to removing Vercel, with rollback | `bf28f46` |
+
+**Checked:**
+
+- **`npm run check:hosting`:** 34 passed, 0 failed, 1 skipped, in this folder and from a fresh clone.
+  - Redirects: `/products` and `/contact` → 301 with the right `location`
+  - Unknown URLs → 404 with the 404 page
+  - Both PDFs → `application/pdf` with the right file names
+  - Skipped: the `/assets/*` long cache, because the local server overwrites `Cache-Control`
+- **The checks match Vercel:** against the live site, 38 passed and 2 failed. Both failures are real: the bare domain's 307.
+- **The checks catch problems:** they failed as they should for the repository root published, a redirect rule missing, temporary or without its `#fragment`, the EmailJS key missing, a flyer's header missing, and a private project.
+- **Flyers:**
+  - a new flyer in `flyers.js` gets its header in both configs, and a rename updates both
+  - a repeat run changes nothing
+  - the build warning fires when `flyers.js` or `make-flyer.mjs` changes, and stays silent after `npm run flyer`
+- **The live site won't change on merge:** comparing builds of `main` and this branch, the only file that differs is `letak-kalendari.pdf`, with the same size and pixels.
+
+**Not checked, because nothing was deployed:** anything on Netlify's real CDN. Step 3 of the checklist does this on a free Deploy Preview.
+
+### Decisions
+
+- **All config in `netlify.toml`,** not `public/_redirects` and `public/_headers`. Files in `public/` end up in `dist/`, so Vercel would serve them on the live site until the switch.
+- **Plain 301 rules for the old URLs (your decision).** Netlify's docs list only 301, 302, 404 and 200 for rules, and Google treats 301 and 308 the same, so an edge function for 308 wasn't worth the extra part. **Still to confirm on the Deploy Preview:** that the CDN keeps `#proizvodi` in `location`. If it doesn't, the function can come back from `b8457f3`.
+- **`/index.html` is no longer redirected.** Netlify serves it with a canonical link to `/`. A rule could loop on the home page and can't be tested locally, and nothing links to that address.
+- **Bare domain and HTTP → HTTPS answer 301 on Netlify,** with no setting to change it. This replaces the earlier plan for 308 on the bare domain. It's still better than today's 307, which isn't permanent.
+- **`netlify serve` instead of extending `npm run preview`:** it's Netlify's own build, parser and runtime rather than my imitation. `npm run preview` stays as it is.
+- **The CLI is installed under `~/.cache/boki-edi/`, not through `npx`:** `npx` aborted on npm's lock and left a broken cache.
+- **`hosting-headers.mjs` is outside the flyers' fingerprint,** so hosting changes don't mark printed flyers as stale. `make-catalog.mjs` still mentions `vercel.json` in a comment; I left it because editing that file would set off the catalogue's warning.
+
+### Open questions / next steps
+
+- [ ] **The domain expires on 2026-12-17.** Confirm that it renews. This is the most urgent item here, whatever happens with the move.
+- [ ] **Review the branch,** then follow [the checklist](docs/hosting-migration.md#checklist).
+- [ ] **Search Console ownership:** I found no Google record in DNS and no tag or file in the site. Check which method it relies on (step 0).
+- [ ] **The Vercel 307 → 308 item below is no longer needed** if the move goes ahead.
+- [ ] **After the switch:** remove `vercel.json` and the other Vercel leftovers (step 8).
+- [x] **`docs/seo-audit.md` was uncommitted** → committed in the session above.
+
+---
+
 ## Lajsna photo change — 2026-11-03 (branch `reorganisation`)
 
 The catalogue's Lajsna card and the calendar flyer's first photo now show the strip mounted on a calendar (`Lajsna za kalendare veca.webp`) instead of the strip alone on gray. It shows better how the product looks in use. The website is unchanged. Nothing was merged or deployed.
